@@ -6,18 +6,17 @@ import retrofit2.http.*
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 
-// --- DATA MODELS ---
+// --- MODELS ---
 data class LoginRequest(val username: String, val password: String)
 data class LoginResponse(val status: String, val message: String?, val user: User?)
 data class User(val id: Int, val username: String, val profile_picture_url: String?, val bio: String?)
 data class Post(val id: Int, val username: String, val profile_picture_url: String?, val image_url: String, val caption: String?)
-
 data class ProfileResponse(val user: User, val stats: Stats, val posts: List<GridPost>)
 data class Stats(val posts: Int, val followers: Int, val following: Int)
 data class GridPost(val id: Int, val image_url: String)
 data class UploadResponse(val status: String, val message: String?)
 
-// --- API INTERFACE ---
+// --- API ---
 interface ApiService {
     @POST("catpaw_api/login.php")
     suspend fun login(@Body request: LoginRequest): LoginResponse
@@ -37,12 +36,12 @@ interface ApiService {
     ): UploadResponse
 }
 
-// --- RETROFIT INSTANCE ---
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2/" // IP Emulator ke Localhost
     val instance: ApiService by lazy {
-        Retrofit.Builder().baseUrl(BASE_URL)
+        Retrofit.Builder()
+            .baseUrl("http://10.0.2.2/") // IP Localhost untuk Emulator
             .addConverterFactory(GsonConverterFactory.create())
-            .build().create(ApiService::class.java)
+            .build()
+            .create(ApiService::class.java)
     }
 }
