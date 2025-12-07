@@ -12,12 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.catproject.network.*
-// Import Wajib untuk Icons
+
+// IMPORT IKON MODERN
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material.icons.rounded.* // Khusus icon chat/inbox:
-import androidx.compose.material.icons.outlined.MarkChatUnread // Khusus icon chat/inbox:
+import androidx.compose.material.icons.automirrored.rounded.Send
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,25 +36,24 @@ fun HomeScreen(navController: NavController) {
                         fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Black,
                         fontSize = 26.sp,
-                        letterSpacing = (-1).sp
+                        letterSpacing = (-1).sp,
+                        color = Color(0xFFFF9800) // Orange Brand Color
                     )
                 },
                 actions = {
-                    // ICON INBOX (CHAT LIST)
+                    // UPDATE: Ikon Pesawat Kertas Modern untuk Inbox
                     IconButton(onClick = { navController.navigate("chat_list") }) {
-                        Icon(Icons.Outlined.Send, contentDescription = "Messages") // Icon Pesawat Kertas khas DM
+                        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Messages", tint = Color.Black)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = Color.White
                 )
             )
         }
     ) { p ->
         LazyColumn(contentPadding = p, modifier = Modifier.fillMaxSize()) {
             items(posts) { post ->
-                // PERUBAHAN: allowDelete = false agar tidak bisa hapus dari Home
                 PostItem(post, navController, allowDelete = false)
             }
         }

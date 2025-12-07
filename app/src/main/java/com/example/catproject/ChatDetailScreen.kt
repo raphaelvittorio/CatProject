@@ -34,35 +34,28 @@ fun ChatDetailScreen(navController: NavController, otherId: Int, otherName: Stri
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    // Fungsi Load Chat
     fun loadChat() {
         scope.launch {
             try {
-                messages = RetrofitClient.instance.getChatDetail(myId, otherId)
-                // Auto scroll ke pesan paling bawah
-                if (messages.isNotEmpty()) {
-                    listState.scrollToItem(messages.size - 1)
+                val newMsgs = RetrofitClient.instance.getChatDetail(myId, otherId)
+                if (newMsgs.size > messages.size) {
+                    messages = newMsgs
+                    listState.animateScrollToItem(messages.size - 1)
                 }
             } catch (e: Exception) {}
         }
     }
 
-    // Polling: Update otomatis setiap 3 detik
     LaunchedEffect(Unit) {
-        while(true) {
-            loadChat()
-            delay(3000)
-        }
+        while(true) { loadChat(); delay(2000) }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(otherName, fontWeight = FontWeight.Bold) },
+                title = { Text(otherName, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, null)
-                    }
+                    IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
@@ -72,16 +65,15 @@ fun ChatDetailScreen(navController: NavController, otherId: Int, otherName: Stri
             modifier = Modifier
                 .padding(p)
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
+                .background(Color.White)
         ) {
-            // LIST PESAN
             LazyColumn(
                 modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                state = listState
+                state = listState,
+                verticalArrangement = Arrangement.Bottom
             ) {
                 items(messages) { msg ->
                     val isMe = (msg.sender_id == myId)
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -89,14 +81,18 @@ fun ChatDetailScreen(navController: NavController, otherId: Int, otherName: Stri
                         contentAlignment = if (isMe) Alignment.CenterEnd else Alignment.CenterStart
                     ) {
                         Surface(
-                            color = if (isMe) Color(0xFF3B82F6) else Color.White,
-                            shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 1.dp
+                            color = if (isMe) Color(0xFFFF9800) else Color(0xFFF0F0F0), // Orange (Me) vs Abu (Dia)
+                            shape = RoundedCornerShape(
+                                topStart = 18.dp, topEnd = 18.dp,
+                                bottomStart = if (isMe) 18.dp else 4.dp,
+                                bottomEnd = if (isMe) 4.dp else 18.dp
+                            ),
+                            shadowElevation = 0.dp
                         ) {
                             Text(
                                 text = msg.message,
                                 color = if (isMe) Color.White else Color.Black,
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                                 fontSize = 15.sp
                             )
                         }
@@ -104,31 +100,30 @@ fun ChatDetailScreen(navController: NavController, otherId: Int, otherName: Stri
                 }
             }
 
-            // INPUT BOX
+            // INPUT AREA
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(8.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextField(
                     value = text,
                     onValueChange = { text = it },
-                    placeholder = { Text("Type a message...") },
+                    placeholder = { Text("Message...") },
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(24.dp),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFFF0F0F0),
                         unfocusedContainerColor = Color(0xFFF0F0F0),
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    shape = RoundedCornerShape(20.dp)
+                    )
                 )
                 Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        if (text.isNotEmpty()) {
+                if (text.isNotEmpty()) {
+                    IconButton(
+                        onClick = {
                             val msgToSend = text
                             text = ""
                             scope.launch {
@@ -138,12 +133,9 @@ fun ChatDetailScreen(navController: NavController, otherId: Int, otherName: Stri
                                 } catch (e: Exception) {}
                             }
                         }
-                    },
-                    modifier = Modifier
-                        .background(Color(0xFF3B82F6), CircleShape)
-                        .size(48.dp)
-                ) {
-                    Icon(Icons.Default.Send, null, tint = Color.White)
+                    ) {
+                        Text("Send", color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

@@ -8,10 +8,13 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.outlined.AccountBox
+// IMPORT IKON MODERN
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.MoreVert // Titik tiga modern pengganti Menu
+import androidx.compose.material.icons.rounded.GridOn
+import androidx.compose.material.icons.outlined.GridOn as GridOnOutlined
+import androidx.compose.material.icons.rounded.Pets
+import androidx.compose.material.icons.outlined.Pets as PetsOutlined
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,94 +37,63 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     navController: NavController,
     rootNavController: NavController,
-    targetUserId: Int? = null // Null = Tab Utama, Tidak Null = Hasil Navigasi
+    targetUserId: Int? = null
 ) {
-    // 1. STATE VARIABLES
+    // ... (BAGIAN STATE & LOAD DATA SAMA SEPERTI SEBELUMNYA) ...
     var data by remember { mutableStateOf<ProfileResponse?>(null) }
     var showMenu by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
-
+    var selectedTabIndex by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
-
-    // Tentukan ID User
     val myId = UserSession.currentUser?.id ?: 0
-    val profileId = targetUserId ?: myId // ID profil yang akan ditampilkan
-    val isMe = (profileId == myId) // Apakah ini profil saya?
-
-    // LOGIC TOMBOL BACK:
-    // Tampilkan Back jika targetUserId TIDAK NULL (artinya kita masuk lewat klik link/navigasi)
-    // Sembunyikan Back jika targetUserId NULL (artinya kita di Tab Menu Utama)
-    val showBackButton = (targetUserId != null)
-
-    // State Lokal UI
+    val profileId = targetUserId ?: myId
+    val isMe = (profileId == myId)
     var isFollowing by remember { mutableStateOf(false) }
     var followerCount by remember { mutableStateOf(0) }
     var followingCount by remember { mutableStateOf(0) }
     var postCount by remember { mutableStateOf(0) }
-
-    // 2. LOAD DATA
     fun loadProfile() {
         scope.launch {
             try {
                 isLoading = true
-                val res = RetrofitClient.instance.getProfile(
-                    userId = profileId,
-                    viewerId = myId
-                )
-
+                val res = RetrofitClient.instance.getProfile(userId = profileId, viewerId = myId)
                 data = res
                 isFollowing = res.is_following
                 followerCount = res.stats.followers
                 followingCount = res.stats.following
                 postCount = res.stats.posts
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                isLoading = false
-            }
+            } catch (e: Exception) { e.printStackTrace() }
+            finally { isLoading = false }
         }
     }
-
     LaunchedEffect(profileId) { loadProfile() }
+    // ... (SAMPAI SINI SAMA) ...
 
-    // 3. UI LAYOUT
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = data?.user?.username ?: "Loading...",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                },
-                // --- UPDATE PENTING DI SINI ---
+                title = { Text(data?.user?.username ?: "Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                 navigationIcon = {
-                    if (showBackButton) {
+                    if (!isMe) {
+                        // UPDATE: Ikon Back Modern
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     }
                 },
                 actions = {
-                    // Menu Logout tetap hanya muncul di profil sendiri (isMe)
                     if (isMe) {
+                        // UPDATE: Ikon Menu Titik Tiga Modern
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.Menu, null)
+                            Icon(Icons.Rounded.MoreVert, null)
                         }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, modifier = Modifier.background(Color.White)) {
                             DropdownMenuItem(
-                                text = { Text("Logout", color = Color.Red) },
+                                text = { Text("Logout", color = Color.Red, fontWeight = FontWeight.Bold) },
                                 onClick = {
                                     showMenu = false
                                     UserSession.currentUser = null
-                                    rootNavController.navigate("login") {
-                                        popUpTo(0) { inclusive = true }
-                                    }
+                                    rootNavController.navigate("login") { popUpTo(0) { inclusive = true } }
                                 }
                             )
                         }
@@ -132,147 +104,84 @@ fun ProfileScreen(
         }
     ) { p ->
         if (data != null) {
-            Column(
-                modifier = Modifier
-                    .padding(p)
-                    .fillMaxSize()
-                    .background(Color.White)
-            ) {
-                // --- HEADER ---
+            Column(modifier = Modifier.padding(p).fillMaxSize().background(Color.White)) {
+                // ... (BAGIAN HEADER, STATS, BIO, BUTTONS SAMA SEPERTI SEBELUMNYA) ...
                 Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val pp = if (data!!.user.profile_picture_url != null)
-                        "http://10.0.2.2/catpaw_api/uploads/${data!!.user.profile_picture_url}"
-                    else "https://via.placeholder.com/150"
-
-                    AsyncImage(
-                        model = pp,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatItem(postCount.toString(), "Posts")
-                        StatItem(followerCount.toString(), "Followers")
-                        StatItem(followingCount.toString(), "Following")
+                    val pp = if (data!!.user.profile_picture_url != null) "http://10.0.2.2/catpaw_api/uploads/${data!!.user.profile_picture_url}" else "https://via.placeholder.com/150"
+                    AsyncImage(model = pp, contentDescription = null, modifier = Modifier.size(86.dp).clip(CircleShape).border(1.dp, Color.LightGray, CircleShape), contentScale = ContentScale.Crop)
+                    Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        ModernStatItem(postCount.toString(), "Posts")
+                        ModernStatItem(followerCount.toString(), "Followers")
+                        ModernStatItem(followingCount.toString(), "Following")
                     }
                 }
-
-                // --- BIO ---
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text(
-                        text = data!!.user.username,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    if (!data!!.user.bio.isNullOrEmpty()) {
-                        Text(
-                            text = data!!.user.bio!!,
-                            fontSize = 14.sp,
-                            lineHeight = 18.sp
-                        )
-                    }
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                    Text(text = data!!.user.username, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    if (!data!!.user.bio.isNullOrEmpty()) { Spacer(Modifier.height(4.dp)); Text(text = data!!.user.bio!!, fontSize = 14.sp, lineHeight = 20.sp, color = Color.DarkGray) }
                 }
-
-                // --- BUTTONS ---
-                Row(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                Spacer(Modifier.height(16.dp))
+                Row(modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
                     if (isMe) {
-                        // Tampilan Profil Sendiri (Edit)
-                        Button(
-                            onClick = { navController.navigate("edit_profile") },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFEFEF)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Edit profile", color = Color.Black)
-                        }
+                        ModernProfileButton("Edit profile", Modifier.weight(1f)) { navController.navigate("edit_profile") }
+                        Spacer(Modifier.width(8.dp))
+                        ModernProfileButton("Share profile", Modifier.weight(1f)) { }
                     } else {
-                        // Tampilan Profil Orang Lain (Follow)
-                        val btnColor = if (isFollowing) Color(0xFFEFEFEF) else MaterialTheme.colorScheme.primary
-                        val txtColor = if (isFollowing) Color.Black else Color.White
-                        val txt = if (isFollowing) "Unfollow" else "Follow"
-
-                        Button(
-                            onClick = {
-                                isFollowing = !isFollowing
-                                followerCount += if (isFollowing) 1 else -1
-                                scope.launch {
-                                    try { RetrofitClient.instance.toggleFollow(FollowRequest(myId, profileId)) }
-                                    catch (e: Exception) {}
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = btnColor),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(txt, color = txtColor, fontWeight = FontWeight.Bold)
+                        val isFollowed = isFollowing
+                        val btnColor = if (isFollowed) Color(0xFFEFEFEF) else Color(0xFFFF9800)
+                        val txtColor = if (isFollowed) Color.Black else Color.White
+                        val txt = if (isFollowed) "Unfollow" else "Follow"
+                        Button(onClick = { isFollowing = !isFollowing; followerCount += if (isFollowing) 1 else -1; scope.launch { try { RetrofitClient.instance.toggleFollow(FollowRequest(myId, profileId)) } catch (e: Exception) {} } }, colors = ButtonDefaults.buttonColors(containerColor = btnColor), shape = RoundedCornerShape(8.dp), modifier = Modifier.weight(1f).height(36.dp), contentPadding = PaddingValues(0.dp)) {
+                            Text(txt, color = txtColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         }
-                        // TOMBOL MESSAGE
-                        Button(
-                            onClick = {
-                                // Navigasi ke Chat Detail dengan Orang Ini
-                                navController.navigate("chat_detail/${profileId}/${data!!.user.username}")
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFEFEF)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Message", color = Color.Black)
-                        }
+                        Spacer(Modifier.width(8.dp))
+                        ModernProfileButton("Message", Modifier.weight(1f)) { navController.navigate("chat_detail/${profileId}/${data!!.user.username}") }
                     }
                 }
+                Spacer(Modifier.height(16.dp))
+                // ... (SAMPAI SINI SAMA) ...
 
-                // --- GRID ---
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                    Icon(Icons.Default.GridOn, null, modifier = Modifier.size(28.dp))
-                    Icon(Icons.Outlined.AccountBox, null, modifier = Modifier.size(28.dp), tint = Color.Gray)
+                // --- TABS (UPDATE IKON MODERN) ---
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    TabIconItem(
+                        isActive = selectedTabIndex == 0,
+                        // Ikon Grid Modern (Rounded vs Outlined)
+                        iconActive = Icons.Rounded.GridOn,
+                        iconInactive = Icons.Outlined.GridOnOutlined,
+                        onClick = { selectedTabIndex = 0 }
+                    )
+                    TabIconItem(
+                        isActive = selectedTabIndex == 1,
+                        // Ikon Pets Modern (Rounded vs Outlined)
+                        iconActive = Icons.Rounded.Pets,
+                        iconInactive = Icons.Outlined.PetsOutlined,
+                        onClick = { selectedTabIndex = 1 }
+                    )
                 }
-                Spacer(Modifier.height(8.dp))
 
-                if (data!!.posts.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No Posts Yet", color = Color.Gray)
+                // --- GRID CONTENT (SAMA SEPERTI SEBELUMNYA) ---
+                if (selectedTabIndex == 0) {
+                    if (data!!.posts.isEmpty()) { EmptyStateView("No Posts Yet", Icons.Outlined.GridOnOutlined) } else {
+                        LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(1.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            items(data!!.posts) { post -> AsyncImage(model = "http://10.0.2.2/catpaw_api/uploads/${post.image_url}", contentDescription = null, modifier = Modifier.aspectRatio(1f).clickable { navController.navigate("post_detail/${post.id}") }, contentScale = ContentScale.Crop) }
+                        }
                     }
                 } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        horizontalArrangement = Arrangement.spacedBy(1.dp),
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        items(data!!.posts) { post ->
-                            AsyncImage(
-                                model = "http://10.0.2.2/catpaw_api/uploads/${post.image_url}",
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .aspectRatio(1f)
-                                    .clickable { navController.navigate("post_detail/${post.id}") },
-                                contentScale = ContentScale.Crop
-                            )
+                    if (data!!.adopted_cats.isEmpty()) { EmptyStateView("No Adopted Cats", Icons.Outlined.PetsOutlined) } else {
+                        LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(1.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            items(data!!.adopted_cats) { cat -> Box { AsyncImage(model = "http://10.0.2.2/catpaw_api/uploads/${cat.image_url}", contentDescription = null, modifier = Modifier.aspectRatio(1f), contentScale = ContentScale.Crop); Surface(color = Color.Black.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) { Text(text = cat.cat_name, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } } }
                         }
                     }
                 }
             }
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        }
+        } else { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFFFF9800)) } }
     }
 }
 
-@Composable
-fun StatItem(count: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = count, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Text(text = label, fontSize = 13.sp)
-    }
-}
+// --- SUB COMPONENTS (SAMA SEPERTI SEBELUMNYA) ---
+@Composable fun ModernStatItem(count: String, label: String) { Column(horizontalAlignment = Alignment.CenterHorizontally) { Text(text = count, fontWeight = FontWeight.Bold, fontSize = 20.sp); Text(text = label, fontSize = 13.sp, color = Color.Gray) } }
+@Composable fun RowScope.ModernProfileButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) { Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFEFEF)), shape = RoundedCornerShape(8.dp), modifier = modifier.height(36.dp), contentPadding = PaddingValues(0.dp)) { Text(text, color = Color.Black, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) } }
+@Composable fun RowScope.TabIconItem(isActive: Boolean, iconActive: androidx.compose.ui.graphics.vector.ImageVector, iconInactive: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) { Box(modifier = Modifier.weight(1f).height(48.dp).clickable { onClick() }.border(width = if (isActive) 1.dp else 0.dp, color = if (isActive) Color(0xFFFF9800) else Color.Transparent, shape = androidx.compose.ui.graphics.RectangleShape), contentAlignment = Alignment.Center) { Icon(imageVector = if (isActive) iconActive else iconInactive, contentDescription = null, tint = if (isActive) Color(0xFFFF9800) else Color.Gray, modifier = Modifier.size(24.dp)) } }
+@Composable fun EmptyStateView(message: String, icon: androidx.compose.ui.graphics.vector.ImageVector) { Column(modifier = Modifier.fillMaxSize().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Box(modifier = Modifier.size(80.dp).border(2.dp, Color.Black, CircleShape).padding(16.dp), contentAlignment = Alignment.Center) { Icon(icon, null, modifier = Modifier.size(40.dp), tint = Color.Black) }; Spacer(Modifier.height(16.dp)); Text(message, fontWeight = FontWeight.Bold, fontSize = 20.sp) } }

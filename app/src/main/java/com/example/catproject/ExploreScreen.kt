@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -52,44 +53,57 @@ fun ExploreScreen(navController: NavController) {
     }
 
     Column(Modifier.fillMaxSize().background(Color.White)) {
-        Box(Modifier.padding(8.dp)) {
+        // MODERN SEARCH BAR
+        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             TextField(
-                value = searchQuery, onValueChange = { doSearch(it) },
-                placeholder = { Text("Search users...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
+                value = searchQuery,
+                onValueChange = { doSearch(it) },
+                placeholder = { Text("Search", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFEFEFEF),
-                    unfocusedContainerColor = Color(0xFFEFEFEF),
-                    focusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = Color(0xFFF0F0F0), // Abu Muda
+                    unfocusedContainerColor = Color(0xFFF0F0F0),
+                    focusedIndicatorColor = Color.Transparent, // Hapus garis bawah
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = MaterialTheme.shapes.medium
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp), // Sudut tumpul
+                singleLine = true
             )
         }
 
         if (searchQuery.isNotEmpty()) {
-            // TAMPILKAN HASIL SEARCH USER
+            // HASIL SEARCH
             LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
                 items(searchResults) { user ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                            navController.navigate("visit_profile/${user.id}")
-                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp)
+                            .clickable { navController.navigate("visit_profile/${user.id}") },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val pp = if(user.profile_picture_url != null) "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
-                        Image(rememberAsyncImagePainter(pp), null, Modifier.size(50.dp).clip(CircleShape), contentScale = ContentScale.Crop)
-                        Spacer(Modifier.width(12.dp))
+                        Image(
+                            painter = rememberAsyncImagePainter(pp),
+                            contentDescription = null,
+                            modifier = Modifier.size(54.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(Modifier.width(16.dp))
                         Column {
                             Text(user.username, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            if(!user.bio.isNullOrEmpty()) Text(user.bio, color = Color.Gray, fontSize = 12.sp, maxLines = 1)
+                            if(!user.bio.isNullOrEmpty()) {
+                                Text(user.bio, color = Color.Gray, fontSize = 14.sp, maxLines = 1)
+                            }
                         }
                     }
                 }
             }
         } else {
-            // TAMPILKAN GRID FOTO DEFAULT
+            // GRID FOTO
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(1.dp),
@@ -99,7 +113,9 @@ fun ExploreScreen(navController: NavController) {
                     Image(
                         painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post.image_url}"),
                         contentDescription = null,
-                        modifier = Modifier.aspectRatio(1f).clickable { navController.navigate("post_detail/${post.id}") },
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .clickable { navController.navigate("post_detail/${post.id}") },
                         contentScale = ContentScale.Crop
                     )
                 }

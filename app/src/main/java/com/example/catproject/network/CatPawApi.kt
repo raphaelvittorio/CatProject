@@ -11,13 +11,13 @@ data class User(val id: Int, val username: String, val profile_picture_url: Stri
 data class Post(val id: Int,val user_id: Int, val username: String, val profile_picture_url: String?, val image_url: String, val caption: String?, var is_liked: Boolean = false, var like_count: Int = 0)
 data class GridPost(val id: Int, val image_url: String)
 data class Comment(val id: Int, val username: String, val comment: String, val profile_picture_url: String?)
-data class AdoptionPost(val id: Int, val cat_name: String, val description: String, val contact_info: String, val image_url: String, val username: String, val profile_picture_url: String?)
+data class AdoptionPost(val id: Int,val user_id: Int, val cat_name: String, val description: String, val contact_info: String, val image_url: String, val username: String, val profile_picture_url: String?,val status: String)
 
 // --- RESPONSE MODELS ---
 data class LoginResponse(val status: String, val message: String?, val user: User?)
 data class BaseResponse(val status: String, val message: String?)
 // Update: ProfileResponse
-data class ProfileResponse(val user: User, val stats: Stats, val posts: List<GridPost>, val is_following: Boolean = false)
+data class ProfileResponse(val user: User, val stats: Stats, val posts: List<GridPost>,val adopted_cats: List<AdoptedCatItem>, val is_following: Boolean = false)
 data class Stats(val posts: Int, val followers: Int, val following: Int)
 data class FollowResponse(val status: String)
 
@@ -49,6 +49,27 @@ data class ChatUserItem(
 
 data class SendMessageRequest(val sender_id: Int, val receiver_id: Int, val message: String)
 
+// --- MODELS ADOPT FORM ---
+data class ApplyAdoptionRequest(
+    val adoption_id: Int,
+    val applicant_id: Int,
+    val message: String,
+    val phone_number: String
+)
+
+data class DeleteAdoptionRequest(val adoption_id: Int, val user_id: Int) // ✨ BARU
+
+// Model Kucing di Profil (Tab 2)
+data class AdoptedCatItem(
+    val id: Int,
+    val image_url: String,
+    val cat_name: String
+)
+
+data class AdoptActionRequest(val adoption_id: Int, val adopter_id: Int)
+
+
+
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
@@ -65,6 +86,8 @@ interface ApiService {
 
     @GET("catpaw_api/get_adoptions.php") suspend fun getAdoptions(): List<AdoptionPost>
 
+    @POST("catpaw_api/apply_adoption.php")
+    suspend fun applyAdoption(@Body r: ApplyAdoptionRequest): BaseResponse
     @Multipart @POST("catpaw_api/upload_post.php")
     suspend fun uploadPost(@Part("user_id") uid: RequestBody, @Part("caption") cap: RequestBody, @Part img: MultipartBody.Part): BaseResponse
 
@@ -81,7 +104,6 @@ interface ApiService {
     suspend fun toggleFollow(@Body r: FollowRequest): FollowResponse
 
     // --- PERBAIKAN DI SINI ---
-    // Ubah nama parameter Kotlin menjadi 'userId' dan 'viewerId' agar sesuai dengan pemanggilan
     @GET("catpaw_api/get_profile_data.php")
     suspend fun getProfile(
         @Query("user_id") userId: Int,
@@ -103,6 +125,14 @@ interface ApiService {
 
     @GET("catpaw_api/get_chat_list.php")
     suspend fun getChatList(@Query("user_id") myId: Int): List<ChatUserItem>
+
+    // ✨ BARU: Endpoint Delete Adoption
+    @POST("catpaw_api/delete_adoption.php")
+    suspend fun deleteAdoption(@Body r: DeleteAdoptionRequest): BaseResponse
+
+    // ✨ NEW: Confirm Adoption
+    @POST("catpaw_api/adopt_action.php")
+    suspend fun confirmAdoption(@Body r: AdoptActionRequest): BaseResponse
 }
 
 object RetrofitClient {

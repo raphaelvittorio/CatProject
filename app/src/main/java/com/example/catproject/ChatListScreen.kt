@@ -1,6 +1,7 @@
 package com.example.catproject
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,7 +30,6 @@ fun ChatListScreen(navController: NavController) {
     var chatList by remember { mutableStateOf<List<ChatUserItem>>(emptyList()) }
     val myId = UserSession.currentUser?.id ?: 0
 
-    // Load Inbox saat dibuka
     LaunchedEffect(Unit) {
         try { chatList = RetrofitClient.instance.getChatList(myId) }
         catch (e: Exception) { e.printStackTrace() }
@@ -38,7 +38,7 @@ fun ChatListScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Messages", fontWeight = FontWeight.Bold) },
+                title = { Text("Messages", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -50,17 +50,14 @@ fun ChatListScreen(navController: NavController) {
     ) { p ->
         LazyColumn(
             contentPadding = p,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+            modifier = Modifier.fillMaxSize().background(Color.White)
         ) {
             items(chatList) { user ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp)
-                        .clickable {
-                            // Pindah ke Room Chat
-                            navController.navigate("chat_detail/${user.id}/${user.username}")
-                        },
+                        .clickable { navController.navigate("chat_detail/${user.id}/${user.username}") }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val pp = if(user.profile_picture_url != null) "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
@@ -68,16 +65,21 @@ fun ChatListScreen(navController: NavController) {
                     Image(
                         painter = rememberAsyncImagePainter(pp),
                         contentDescription = null,
-                        modifier = Modifier.size(50.dp).clip(CircleShape),
+                        modifier = Modifier.size(56.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                     Spacer(Modifier.width(16.dp))
-                    Column {
-                        Text(user.username, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(user.last_message ?: "", color = Color.Gray, maxLines = 1, fontSize = 14.sp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(user.username, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            user.last_message ?: "No messages yet",
+                            color = Color.Gray,
+                            maxLines = 1,
+                            fontSize = 14.sp
+                        )
                     }
                 }
-                Divider(color = Color(0xFFF0F0F0))
             }
         }
     }
