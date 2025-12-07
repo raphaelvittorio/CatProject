@@ -26,26 +26,21 @@ fun ExploreScreen() {
                 value = "", onValueChange = {},
                 placeholder = { Text("Search") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                colors = TextFieldDefaults.colors( // 1. Ganti textFieldColors jadi colors
-                    // 2. Ganti containerColor menjadi dua baris ini:
+                // PERBAIKAN DISINI: Ganti textFieldColors -> colors
+                colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color(0xFFEFEFEF),
                     unfocusedContainerColor = Color(0xFFEFEFEF),
                     disabledContainerColor = Color(0xFFEFEFEF),
-
-                    // Indikator garis bawah transparan
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 ),
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = MaterialTheme.shapes.medium
             )
         }
         // Grid Random
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
+        LazyVerticalGrid(columns = GridCells.Fixed(3), horizontalArrangement = Arrangement.spacedBy(1.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             items(30) {
                 Image(
                     painter = rememberAsyncImagePainter("https://placekitten.com/200/200?image=$it"),
@@ -55,5 +50,12 @@ fun ExploreScreen() {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun ReelsScreen() {
+    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Text("Reels Video Placeholder", color = Color.White)
     }
 }

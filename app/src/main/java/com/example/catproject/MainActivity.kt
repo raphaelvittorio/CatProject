@@ -1,5 +1,4 @@
 package com.example.catproject
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,10 +10,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CatProjectTheme {
-                val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = "login") {
-                    composable("login") { LoginScreen(navController) }
-                    composable("main_app") { MainAppScreen() }
+                val nav = rememberNavController()
+                NavHost(nav, startDestination = "login") {
+                    composable("login") { LoginScreen(nav) }
+                    composable("signup") { SignUpScreen(nav) }
+                    composable("main_app") { MainAppScreen(nav) }
                 }
             }
         }
