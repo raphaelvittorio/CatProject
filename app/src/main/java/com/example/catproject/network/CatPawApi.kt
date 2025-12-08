@@ -68,7 +68,26 @@ data class AdoptedCatItem(
 
 data class AdoptActionRequest(val adoption_id: Int, val adopter_id: Int)
 
+// Model Baru untuk Event
+data class EventPost(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val event_date: String,
+    val time: String,
+    val location: String,
+    val image_url: String?
+)
 
+// --- MODELS ---
+data class NotificationItem(
+    val id: Int,
+    val type: String, // 'like', 'comment', 'follow'
+    val created_at: String,
+    val actor_name: String,
+    val actor_pic: String?,
+    val post_image: String?
+)
 
 // --- API INTERFACE ---
 interface ApiService {
@@ -133,6 +152,25 @@ interface ApiService {
     // ✨ NEW: Confirm Adoption
     @POST("catpaw_api/adopt_action.php")
     suspend fun confirmAdoption(@Body r: AdoptActionRequest): BaseResponse
+
+    // ✨ NEW: Get Events
+    @GET("catpaw_api/get_events.php")
+    suspend fun getEvents(): List<EventPost>
+
+    // ✨ NEW: Create Event
+    @Multipart
+    @POST("catpaw_api/create_event.php")
+    suspend fun createEvent(
+        @Part("title") title: RequestBody,
+        @Part("description") desc: RequestBody,
+        @Part("event_date") date: RequestBody,
+        @Part("time") time: RequestBody,
+        @Part("location") loc: RequestBody,
+        @Part image: MultipartBody.Part
+    ): BaseResponse
+
+    @GET("catpaw_api/get_notifications.php")
+    suspend fun getNotifications(@Query("user_id") uid: Int): List<NotificationItem>
 }
 
 object RetrofitClient {

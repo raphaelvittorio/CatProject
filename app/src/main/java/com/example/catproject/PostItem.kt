@@ -6,12 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-// Import Ikon Modern
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.ChatBubbleOutline
-import androidx.compose.material.icons.automirrored.rounded.Send // Pesawat kertas modern
-import androidx.compose.material.icons.rounded.MoreVert // Titik tiga modern
+// IMPORT IKON MODERN (OUTLINED)
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.catproject.network.DeletePostRequest
@@ -64,7 +65,7 @@ fun PostItem(
                     Image(
                         painter = rememberAsyncImagePainter(pp),
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp).clip(CircleShape),
+                        modifier = Modifier.size(34.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                     Spacer(Modifier.width(10.dp))
@@ -73,9 +74,8 @@ fun PostItem(
 
                 if (isOwner && allowDelete) {
                     Box {
-                        // UPDATE: Ikon Titik Tiga Rounded
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                            Icon(Icons.Outlined.MoreVert, contentDescription = "More")
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                             DropdownMenuItem(
@@ -106,40 +106,48 @@ fun PostItem(
                 contentScale = ContentScale.Crop
             )
 
-            // ACTIONS (IKON MODERN)
+            // ACTIONS (IKON BARU: Outlined semua)
             Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-                // Like (Rounded)
+                // Like: Jika liked pakai Filled (Merah), jika tidak pakai Outlined (Hitam Tipis)
                 Icon(
-                    imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
-                    tint = if (isLiked) Color.Red else Color.Black,
-                    modifier = Modifier.size(28.dp).clickable {
+                    tint = if (isLiked) Color(0xFFFF3D00) else Color.Black, // Merah Cerah vs Hitam
+                    modifier = Modifier.size(26.dp).clickable {
                         isLiked = !isLiked
                         likeCount += if (isLiked) 1 else -1
                         scope.launch { RetrofitClient.instance.toggleLike(LikeRequest(myId, post.id)) }
                     }
                 )
                 Spacer(Modifier.width(16.dp))
-                // Comment (Rounded Bubble)
+
+                // Comment: Outlined Bubble
                 Icon(
-                    Icons.Rounded.ChatBubbleOutline,
+                    imageVector = Icons.Outlined.ChatBubbleOutline,
                     contentDescription = null,
-                    modifier = Modifier.size(28.dp).clickable { navController.navigate("comments/${post.id}") }
+                    modifier = Modifier.size(26.dp).clickable { navController.navigate("comments/${post.id}") }
                 )
                 Spacer(Modifier.width(16.dp))
-                // Share (Pesawat Kertas Modern / AutoMirrored)
-                Icon(Icons.AutoMirrored.Rounded.Send, null, modifier = Modifier.size(28.dp))
+
+                // Share: Outlined Paper Plane
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Send,
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp)
+                )
             }
 
             // CAPTION
             Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-                Text("$likeCount likes", fontWeight = FontWeight.Bold)
+                Text("$likeCount likes", fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.height(4.dp))
                 Row {
                     Text(post.username, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(text = post.caption ?: "")
                 }
-                Text("View all comments", color = Color.Gray, modifier = Modifier.clickable { navController.navigate("comments/${post.id}") })
+                Spacer(Modifier.height(4.dp))
+                Text("View all comments", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.clickable { navController.navigate("comments/${post.id}") })
             }
         }
     }
