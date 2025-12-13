@@ -96,11 +96,11 @@ fun LoginScreen(navController: NavController) {
             )
 
             // Forgot Password (Dummy)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = { /* TODO */ }) {
-                    Text("Forgot password?", color = Color(0xFF3797EF))
-                }
-            }
+//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+//                TextButton(onClick = { /* TODO */ }) {
+//                    Text("Forgot password?", color = Color(0xFF3797EF))
+//                }
+//            }
 
             Spacer(Modifier.height(24.dp))
 
