@@ -6,9 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,7 +23,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -261,7 +258,7 @@ fun CreateEventScreen(navController: NavController) {
                 // Submit Button
                 Button(
                     onClick = {
-                        if (title.isNotEmpty() && selectedDateStr.isNotEmpty() && imageUri != null) {
+                        if (title.isNotEmpty() && selectedDateStr.isNotEmpty() && imageUri != null && location.isNotEmpty()) {
                             isLoading = true
                             scope.launch {
                                 try {
@@ -269,13 +266,19 @@ fun CreateEventScreen(navController: NavController) {
                                     context.contentResolver.openInputStream(imageUri!!)?.copyTo(FileOutputStream(file))
 
                                     val imgBody = MultipartBody.Part.createFormData("image", file.name, file.asRequestBody("image/*".toMediaTypeOrNull()))
+
+                                    // --- PENTING: Ambil User ID & Kirim ke API ---
+                                    val uid = UserSession.currentUser?.id ?: 0
+                                    val uidBody = uid.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+
                                     val tBody = title.toRequestBody("text/plain".toMediaTypeOrNull())
                                     val dBody = description.toRequestBody("text/plain".toMediaTypeOrNull())
                                     val locBody = location.toRequestBody("text/plain".toMediaTypeOrNull())
                                     val dateBody = selectedDateStr.toRequestBody("text/plain".toMediaTypeOrNull())
                                     val timeBody = selectedTimeStr.toRequestBody("text/plain".toMediaTypeOrNull())
 
-                                    val res = RetrofitClient.instance.createEvent(tBody, dBody, dateBody, timeBody, locBody, imgBody)
+                                    // Kirim uidBody ke parameter pertama (Sesuai update CatPawApi)
+                                    val res = RetrofitClient.instance.createEvent(uidBody, tBody, dBody, dateBody, timeBody, locBody, imgBody)
 
                                     if (res.status == "success") {
                                         Toast.makeText(context, "Event Created!", Toast.LENGTH_SHORT).show()

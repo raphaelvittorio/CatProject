@@ -68,9 +68,13 @@ data class AdoptedCatItem(
 
 data class AdoptActionRequest(val adoption_id: Int, val adopter_id: Int)
 
+
+// --- MODELS ---
+data class DeleteEventRequest(val event_id: Int, val user_id: Int) // NEW
 // Model Baru untuk Event
 data class EventPost(
     val id: Int,
+    val user_id: Int, // NEW
     val title: String,
     val description: String,
     val event_date: String,
@@ -157,10 +161,11 @@ interface ApiService {
     @GET("catpaw_api/get_events.php")
     suspend fun getEvents(): List<EventPost>
 
-    // ✨ NEW: Create Event
+    // UPDATE: Create Event menerima user_id
     @Multipart
     @POST("catpaw_api/create_event.php")
     suspend fun createEvent(
+        @Part("user_id") userId: RequestBody, // NEW
         @Part("title") title: RequestBody,
         @Part("description") desc: RequestBody,
         @Part("event_date") date: RequestBody,
@@ -168,6 +173,10 @@ interface ApiService {
         @Part("location") loc: RequestBody,
         @Part image: MultipartBody.Part
     ): BaseResponse
+
+    // NEW: Delete Event
+    @POST("catpaw_api/delete_event.php")
+    suspend fun deleteEvent(@Body r: DeleteEventRequest): BaseResponse
 
     @GET("catpaw_api/get_notifications.php")
     suspend fun getNotifications(@Query("user_id") uid: Int): List<NotificationItem>
