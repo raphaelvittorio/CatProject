@@ -29,47 +29,57 @@ import androidx.navigation.navArgument
 @Composable
 fun MainAppScreen(rootNavController: NavController) {
     val nav = rememberNavController()
+    val navBackStackEntry by nav.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // LOGIKA MENYEMBUNYIKAN BOTTOM BAR
+    // Bottom bar disembunyikan saat membuka Story, Chat Detail, Camera, dll.
+    val hideBottomBarRoutes = listOf(
+        "story_view/{userId}",
+        "add",
+        "chat_detail/{userId}/{userName}",
+        "comments/{postId}"
+    )
+
+    // Cek apakah rute saat ini ada di daftar yang harus disembunyikan
+    // Kita pakai statrtWith atau pencocokan pola sederhana agar parameter {userId} tetap terdeteksi
+    val shouldShowBottomBar = currentRoute !in hideBottomBarRoutes &&
+            currentRoute?.startsWith("story_view/") == false
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 0.dp
-            ) {
-                val navBackStackEntry by nav.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
-
-                // UPDATE NAVBAR ITEMS: Ganti "add" dengan "event"
-                val items = listOf(
-                    Quadruple("home", Icons.Rounded.Home, Icons.Outlined.Home, "Home"),
-
-                    Quadruple("search", Icons.Rounded.Search, Icons.Outlined.Search, "Search"),
-
-                    Quadruple("adopt", Icons.Rounded.Pets, Icons.Outlined.Pets, "Adopt"),
-
-                    Quadruple("event", Icons.Rounded.Event, Icons.Outlined.Event, "Events"),
-
-                    Quadruple("profile", Icons.Rounded.Person, Icons.Outlined.PersonOutline, "Profile")
-                )
-
-                items.forEach { (route, selectedIcon, unselectedIcon, label) ->
-                    val isSelected = currentRoute == route
-                    NavigationBarItem(
-                        icon = { Icon(if (isSelected) selectedIcon else unselectedIcon, contentDescription = label) },
-                        selected = isSelected,
-                        onClick = {
-                            nav.navigate(route) {
-                                popUpTo(nav.graph.startDestinationId) { saveState = false }
-                                launchSingleTop = true
-                                restoreState = false
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Transparent,
-                            selectedIconColor = Color(0xFFFF9800),
-                            unselectedIconColor = Color.Gray
-                        )
+            if (shouldShowBottomBar) {
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 0.dp
+                ) {
+                    val items = listOf(
+                        Quadruple("home", Icons.Rounded.Home, Icons.Outlined.Home, "Home"),
+                        Quadruple("search", Icons.Rounded.Search, Icons.Outlined.Search, "Search"),
+                        Quadruple("adopt", Icons.Rounded.Pets, Icons.Outlined.Pets, "Adopt"),
+                        Quadruple("event", Icons.Rounded.Event, Icons.Outlined.Event, "Events"),
+                        Quadruple("profile", Icons.Rounded.Person, Icons.Outlined.PersonOutline, "Profile")
                     )
+
+                    items.forEach { (route, selectedIcon, unselectedIcon, label) ->
+                        val isSelected = currentRoute == route
+                        NavigationBarItem(
+                            icon = { Icon(if (isSelected) selectedIcon else unselectedIcon, contentDescription = label) },
+                            selected = isSelected,
+                            onClick = {
+                                nav.navigate(route) {
+                                    popUpTo(nav.graph.startDestinationId) { saveState = false }
+                                    launchSingleTop = true
+                                    restoreState = false
+                                }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = Color.Transparent,
+                                selectedIconColor = Color(0xFFFF9800),
+                                unselectedIconColor = Color.Gray
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -81,33 +91,81 @@ fun MainAppScreen(rootNavController: NavController) {
         ) {
             // --- ROUTES ---
 
+            // 1. HOME (Termasuk Feed & List Story)
             composable("home") { HomeScreen(nav) }
+
+            // 2. SEARCH
             composable("search") { ExploreScreen(nav) }
 
-            // ROUTE BARU: EVENT
+            // 3. EVENT
             composable("event") { EventScreen(nav) }
-            // ROUTE CREATE EVENT (NEW)
             composable("create_event") { CreateEventScreen(nav) }
 
-            // Route Add Post tetap ada, tapi tidak di navbar (akses dari Home TopBar)
+            // 4. ADD POST
             composable("add") { AddPostScreen(nav) }
 
+            // 5. ADOPT
             composable("adopt") { AdoptScreen(nav) }
             composable("add_adopt") { AddAdoptScreen(nav) }
-            composable(route = "apply_adopt/{adoptId}/{catName}", arguments = listOf(navArgument("adoptId") { type = NavType.IntType }, navArgument("catName") { type = NavType.StringType })) { backStackEntry -> val id = backStackEntry.arguments?.getInt("adoptId") ?: 0; val name = backStackEntry.arguments?.getString("catName") ?: "Cat"; ApplyAdoptionScreen(nav, id, name) }
+            composable(
+                route = "apply_adopt/{adoptId}/{catName}",
+                arguments = listOf(navArgument("adoptId") { type = NavType.IntType }, navArgument("catName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("adoptId") ?: 0
+                val name = backStackEntry.arguments?.getString("catName") ?: "Cat"
+                ApplyAdoptionScreen(nav, id, name)
+            }
 
+            // 6. PROFILE
             composable("profile") { ProfileScreen(nav, rootNavController, null) }
-            composable(route = "visit_profile/{userId}", arguments = listOf(navArgument("userId") { type = NavType.IntType })) { backStackEntry -> val uid = backStackEntry.arguments?.getInt("userId") ?: 0; ProfileScreen(nav, rootNavController, uid) }
+            composable(
+                route = "visit_profile/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getInt("userId") ?: 0
+                ProfileScreen(nav, rootNavController, uid)
+            }
             composable("edit_profile") { EditProfileScreen(nav) }
 
-            composable(route = "post_detail/{postId}", arguments = listOf(navArgument("postId") { type = NavType.IntType })) { backStackEntry -> val pid = backStackEntry.arguments?.getInt("postId") ?: 0; PostDetailScreen(nav, pid) }
-            composable(route = "comments/{postId}", arguments = listOf(navArgument("postId") { type = NavType.IntType })) { backStackEntry -> val pid = backStackEntry.arguments?.getInt("postId") ?: 0; CommentsScreen(nav, pid) }
+            // 7. POST DETAIL & COMMENT
+            composable(
+                route = "post_detail/{postId}",
+                arguments = listOf(navArgument("postId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val pid = backStackEntry.arguments?.getInt("postId") ?: 0
+                PostDetailScreen(nav, pid)
+            }
+            composable(
+                route = "comments/{postId}",
+                arguments = listOf(navArgument("postId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val pid = backStackEntry.arguments?.getInt("postId") ?: 0
+                CommentsScreen(nav, pid)
+            }
 
+            // 8. CHAT
             composable("chat_list") { ChatListScreen(nav) }
-            composable(route = "chat_detail/{userId}/{userName}", arguments = listOf(navArgument("userId") { type = NavType.IntType }, navArgument("userName") { type = NavType.StringType })) { backStackEntry -> val uid = backStackEntry.arguments?.getInt("userId") ?: 0; val uname = backStackEntry.arguments?.getString("userName") ?: "Chat"; ChatDetailScreen(nav, uid, uname) }
+            composable(
+                route = "chat_detail/{userId}/{userName}",
+                arguments = listOf(navArgument("userId") { type = NavType.IntType }, navArgument("userName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getInt("userId") ?: 0
+                val uname = backStackEntry.arguments?.getString("userName") ?: "Chat"
+                ChatDetailScreen(nav, uid, uname)
+            }
 
-            // ROUTE NOTIFICATION (NEW)
+            // 9. NOTIFICATION
             composable("notifications") { NotificationScreen(nav) }
+
+            // --- 10. STORY VIEW (ROUTE BARU DITAMBAHKAN DI SINI) ---
+            composable(
+                route = "story_view/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getInt("userId") ?: 0
+                // Memanggil Screen Story yang sudah dibuat terpisah
+                StoryViewScreen(nav, uid)
+            }
         }
     }
 }

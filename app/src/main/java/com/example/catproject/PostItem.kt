@@ -112,7 +112,7 @@ fun PostItem(
                 Icon(
                     imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
-                    tint = if (isLiked) Color(0xFFFF3D00) else Color.Black, // Merah Cerah vs Hitam
+                    tint = if (isLiked) Color(0xFFFF9800) else Color.Black, // Merah Cerah vs Hitam
                     modifier = Modifier.size(26.dp).clickable {
                         isLiked = !isLiked
                         likeCount += if (isLiked) 1 else -1
