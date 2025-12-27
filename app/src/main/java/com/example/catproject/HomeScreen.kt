@@ -39,14 +39,19 @@ fun HomeScreen(navController: NavController) {
     var storyUsers by remember { mutableStateOf<List<StoryUser>>(emptyList()) }
     val myId = UserSession.currentUser?.id ?: 0
     val scope = rememberCoroutineScope()
+
+    // Cek apakah user sendiri punya story aktif
     val amIHaveStory = storyUsers.any { it.id == myId }
 
-    LaunchedEffect(Unit) {
+    // Fungsi refresh data
+    fun loadData() {
         scope.launch {
             try { posts = RetrofitClient.instance.getPosts(myId) } catch (e: Exception) {}
             try { storyUsers = RetrofitClient.instance.getActiveStories() } catch (e: Exception) {}
         }
     }
+
+    LaunchedEffect(Unit) { loadData() }
 
     Scaffold(
         topBar = {
@@ -115,7 +120,15 @@ fun HomeScreen(navController: NavController) {
 
             // --- POST SECTION ---
             items(posts) { post ->
-                PostItem(post, navController)
+                // PERBAIKAN DI SINI: Menambahkan callback onDelete
+                PostItem(
+                    post = post,
+                    navController = navController,
+                    onDelete = {
+                        // Hapus post dari list lokal agar hilang tanpa reload
+                        posts = posts.filter { it.id != post.id }
+                    }
+                )
             }
         }
     }

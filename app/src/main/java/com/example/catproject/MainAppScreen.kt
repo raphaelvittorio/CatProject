@@ -171,6 +171,10 @@ fun MainAppScreen(rootNavController: NavController) {
             composable("admin_dashboard") { AdminDashboardScreen(nav) }
             composable("admin_users") { AdminUserListScreen(nav) }
             composable("admin_posts") { AdminPostListScreen(nav) }
+            composable("admin_reports") { AdminReportScreen(nav) }
+
+            //Settings
+            composable("settings") { SettingsScreen(nav, rootNavController = nav) }
         }
     }
 }

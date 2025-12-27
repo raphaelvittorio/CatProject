@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 // IMPORT IKON MODERN
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.GridOn
 import androidx.compose.material.icons.outlined.GridOn as GridOnOutlined
@@ -26,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,8 +60,6 @@ fun ProfileScreen(
     var followingCount by remember { mutableStateOf(0) }
     var postCount by remember { mutableStateOf(0) }
 
-    // Menu Logout
-    var showMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // Load Profile Data
@@ -71,7 +69,6 @@ fun ProfileScreen(
                 isLoading = true
                 val res = RetrofitClient.instance.getProfile(userId = profileId, viewerId = myId)
                 data = res
-                // Set data awal ke state reaktif
                 isFollowing = res.is_following
                 followerCount = res.stats.followers
                 followingCount = res.stats.following
@@ -104,24 +101,16 @@ fun ProfileScreen(
                     }
                 },
                 actions = {
+                    // JIKA PROFIL SAYA -> Tombol Titik 3 ke Settings
                     if (isMe) {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Rounded.MoreVert, null)
+                        IconButton(onClick = { navController.navigate("settings") }) {
+                            Icon(Icons.Rounded.MoreVert, "Settings", tint = Color.Black)
                         }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Logout", color = Color.Red, fontWeight = FontWeight.Bold) },
-                                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Logout, null, tint = Color.Red) },
-                                onClick = {
-                                    showMenu = false
-                                    UserSession.currentUser = null
-                                    try { rootNavController.navigate("login") { popUpTo(0) } } catch (e: Exception) { navController.navigate("login") }
-                                }
-                            )
+                    }
+                    // JIKA PROFIL ORANG LAIN -> Tombol Titik 3 (Report dll - belum ada fungsi)
+                    else {
+                        IconButton(onClick = { /* Report logic */ }) {
+                            Icon(Icons.Rounded.MoreVert, "Options", tint = Color.Black)
                         }
                     }
                 },
@@ -141,7 +130,7 @@ fun ProfileScreen(
                 contentPadding = p,
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 1. HEADER SECTION (Menggunakan Span 3 agar selebar layar)
+                // 1. HEADER SECTION
                 item(span = { GridItemSpan(3) }) {
                     Column(
                         modifier = Modifier
@@ -195,7 +184,7 @@ fun ProfileScreen(
 
                         Spacer(Modifier.height(16.dp))
 
-                        // C. Action Buttons (Edit / Follow / Admin)
+                        // C. Action Buttons
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -203,27 +192,15 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (isMe) {
-                                // Tombol Edit (Standard)
+                                // Tombol Edit
                                 ActionButtonThemed("Edit Profile", Modifier.weight(1f)) {
                                     navController.navigate("edit_profile")
                                 }
-
-                                // --- TOMBOL ADMIN PANEL (HANYA UNTUK ADMIN) ---
-                                if (UserSession.currentUser?.role == "admin") {
-                                    Button(
-                                        onClick = { navController.navigate("admin_dashboard") },
-                                        modifier = Modifier.weight(1f).height(34.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(0.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-                                    ) {
-                                        Text("Admin Panel", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                    }
-                                }
-                                // ----------------------------------------------
+                                // Tombol Share
+                                ActionButtonThemed("Share Profile", Modifier.weight(1f)) {}
                             } else {
-                                // Tombol Follow (Filled Orange Style)
-                                val btnColor = if (isFollowing) Color(0xFFEFEFEF) else Color(0xFFFF9800) // Orange Theme
+                                // Tombol Follow
+                                val btnColor = if (isFollowing) Color(0xFFEFEFEF) else Color(0xFFFF9800)
                                 val txtColor = if (isFollowing) Color.Black else Color.White
                                 val txt = if (isFollowing) "Unfollow" else "Follow"
 
@@ -241,7 +218,7 @@ fun ProfileScreen(
                                     Text(txt, color = txtColor, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                 }
 
-                                // Tombol Message (Outline Style)
+                                // Tombol Message
                                 ActionButtonThemed("Message", Modifier.weight(1f)) {
                                     navController.navigate("chat_detail/${profileId}/${user.username}")
                                 }
@@ -250,7 +227,7 @@ fun ProfileScreen(
 
                         Spacer(Modifier.height(20.dp))
 
-                        // D. Tab Switcher Modern
+                        // D. Tab Switcher
                         Row(modifier = Modifier.fillMaxWidth()) {
                             TabItemThemed(
                                 isActive = selectedTab == 0,
@@ -268,9 +245,8 @@ fun ProfileScreen(
                     }
                 }
 
-                // 2. GRID KONTEN (POSTS / ADOPTIONS)
+                // 2. GRID KONTEN
                 if (selectedTab == 0) {
-                    // --- TAB POSTS ---
                     if (posts.isEmpty()) {
                         item(span = { GridItemSpan(3) }) { EmptyStateThemed("No posts yet") }
                     } else {
@@ -287,7 +263,6 @@ fun ProfileScreen(
                         }
                     }
                 } else {
-                    // --- TAB ADOPTIONS ---
                     if (adoptions.isEmpty()) {
                         item(span = { GridItemSpan(3) }) { EmptyStateThemed("No adoption listings") }
                     } else {
@@ -299,7 +274,6 @@ fun ProfileScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
-                                // Overlay Nama Kucing (Gradient/Darken)
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomStart)
@@ -321,7 +295,6 @@ fun ProfileScreen(
                 }
             }
         } else {
-            // Loading State (Orange Indicator)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFFFF9800))
             }
@@ -329,7 +302,7 @@ fun ProfileScreen(
     }
 }
 
-// --- KOMPONEN PENDUKUNG TEMA ---
+// --- KOMPONEN PENDUKUNG ---
 
 @Composable
 fun StatItemThemed(count: String, label: String) {
@@ -347,7 +320,7 @@ fun ActionButtonThemed(text: String, modifier: Modifier = Modifier, onClick: () 
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0)) // Garis halus
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
         Text(text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
     }
@@ -370,15 +343,14 @@ fun RowScope.TabItemThemed(
             Icon(
                 imageVector = if (isActive) iconActive else iconInactive,
                 contentDescription = null,
-                tint = if (isActive) Color.Black else Color.Gray, // Hitam saat aktif
+                tint = if (isActive) Color.Black else Color.Gray,
                 modifier = Modifier.size(24.dp)
             )
         }
-        // Garis Indikator Bawah
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.5.dp) // Sedikit lebih tebal agar terlihat
+                .height(1.5.dp)
                 .background(if (isActive) Color.Black else Color(0xFFF5F5F5))
         )
     }

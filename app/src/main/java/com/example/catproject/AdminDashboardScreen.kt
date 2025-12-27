@@ -9,12 +9,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.DynamicFeed
-import androidx.compose.material.icons.rounded.EventAvailable
-import androidx.compose.material.icons.rounded.PersonSearch
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,102 +22,156 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.catproject.network.DashboardStats
+import com.example.catproject.network.RetrofitClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(navController: NavController) {
-    val brandColor = Color(0xFFFF9800)
-    val user = UserSession.currentUser
+    var stats by remember { mutableStateOf<DashboardStats?>(null) }
+
+    // Load Real Analytics
+    LaunchedEffect(Unit) {
+        try { stats = RetrofitClient.instance.getAdminDashboardStats() } catch (e: Exception) {}
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Admin Panel", fontWeight = FontWeight.Bold, color = Color.Black) },
+                title = { Text("Admin Panel", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Rounded.ArrowBack, "Back", tint = Color.Black)
+                        Icon(Icons.Rounded.ArrowBack, "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFFF8F9FA))
             )
         },
-        containerColor = Color(0xFFF8F9FA) // Background Modern (Soft Gray)
+        containerColor = Color(0xFFF8F9FA)
     ) { p ->
-        // Menggunakan LazyVerticalGrid untuk layout utama agar responsif
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(24.dp),
+            contentPadding = PaddingValues(20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .padding(p)
-                .fillMaxSize()
+            modifier = Modifier.padding(p)
         ) {
-            // --- HEADER SECTION (Full Width) ---
+            // --- SECTION 1: ANALYTICS CARDS (REAL DATA) ---
             item(span = { GridItemSpan(2) }) {
-                Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                    Text(
-                        text = "Hello, ${user?.username ?: "Admin"}",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Select a tool below to manage the platform contents and users.",
-                        fontSize = 16.sp,
-                        color = Color.Gray,
-                        lineHeight = 24.sp
-                    )
-                }
+                Text("Analytics Overview", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
 
-            // --- MENU CARDS ---
+            item {
+                StatCardModern(
+                    title = "Total Users",
+                    value = stats?.total_users ?: "-",
+                    icon = Icons.Rounded.Group,
+                    color = Color(0xFF2196F3)
+                )
+            }
+            item {
+                StatCardModern(
+                    title = "Posts Created",
+                    value = stats?.total_posts ?: "-",
+                    icon = Icons.Rounded.Image,
+                    color = Color(0xFF9C27B0)
+                )
+            }
+            item {
+                StatCardModern(
+                    title = "Successful Adoptions",
+                    value = stats?.successful_adoptions ?: "-",
+                    icon = Icons.Rounded.Pets,
+                    color = Color(0xFF4CAF50)
+                )
+            }
+            item {
+                // Card Reports dengan indikator merah jika ada pending
+                StatCardModern(
+                    title = "Pending Reports",
+                    value = stats?.pending_reports ?: "-",
+                    icon = Icons.Rounded.ReportProblem,
+                    color = Color(0xFFF44336),
+                    isAlert = (stats?.pending_reports?.toIntOrNull() ?: 0) > 0
+                )
+            }
 
-            // 1. Manage Users
+            // --- SECTION 2: MANAGEMENT MENU ---
+            item(span = { GridItemSpan(2) }) {
+                Spacer(Modifier.height(16.dp))
+                Text("Management Tools", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+
+            // MENU: REPORTS (NEW)
+            item(span = { GridItemSpan(2) }) {
+                AdminActionCard(
+                    title = "User Reports",
+                    subtitle = "Review and moderate reported content",
+                    icon = Icons.Rounded.Report,
+                    gradientColors = listOf(Color(0xFFD32F2F), Color(0xFFFF5252)),
+                    onClick = { navController.navigate("admin_reports") },
+                    isWide = true
+                )
+            }
+
+            // MENU: USERS
             item {
                 AdminActionCard(
                     title = "Users",
-                    subtitle = "Manage roles & accounts",
+                    subtitle = "Manage accounts",
                     icon = Icons.Rounded.PersonSearch,
-                    gradientColors = listOf(Color(0xFF6A11CB), Color(0xFF2575FC)), // Purple-Blue
+                    gradientColors = listOf(Color(0xFF6A11CB), Color(0xFF2575FC)),
                     onClick = { navController.navigate("admin_users") }
                 )
             }
 
-            // 2. Manage Posts
+            // MENU: POSTS
             item {
                 AdminActionCard(
                     title = "Posts",
-                    subtitle = "Moderate content feed",
+                    subtitle = "Content feed",
                     icon = Icons.Rounded.DynamicFeed,
-                    gradientColors = listOf(Color(0xFFFD1D1D), Color(0xFFFCB045)), // Red-Orange
+                    gradientColors = listOf(Color(0xFFFF9800), Color(0xFFFF512F)),
                     onClick = { navController.navigate("admin_posts") }
-                )
-            }
-
-            // 3. Create Event (Full Width)
-            item(span = { GridItemSpan(2) }) {
-                AdminActionCard(
-                    title = "Create Community Event",
-                    subtitle = "Host a new gathering or webinar",
-                    icon = Icons.Rounded.EventAvailable,
-                    gradientColors = listOf(Color(0xFFFF9800), Color(0xFFFF512F)), // Brand Orange
-                    onClick = { navController.navigate("create_event") },
-                    isWide = true
                 )
             }
         }
     }
 }
 
-// --- MODERN CARD COMPONENT ---
+@Composable
+fun StatCardModern(title: String, value: String, icon: ImageVector, color: Color, isAlert: Boolean = false) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.height(100.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Icon(icon, null, tint = color)
+                if (isAlert) {
+                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color.Red))
+                }
+            }
+            Column {
+                Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = Color.Black)
+                Text(title, fontSize = 12.sp, color = Color.Gray)
+            }
+        }
+    }
+}
+
+// Letakkan di paling bawah file AdminDashboardScreen.kt
 
 @Composable
 fun AdminActionCard(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     gradientColors: List<Color>,
     onClick: () -> Unit,
     isWide: Boolean = false
@@ -135,20 +186,19 @@ fun AdminActionCard(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background Gradient Bubble (Decorative)
+            // Background Gradient Bubble
             Box(
                 modifier = Modifier
                     .size(150.dp)
                     .offset(x = if (isWide) 250.dp else 80.dp, y = (-40).dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(gradientColors.map { it.copy(alpha = 0.15f) }))
+                    .background(androidx.compose.ui.graphics.Brush.linearGradient(gradientColors.map { it.copy(alpha = 0.15f) }))
             )
 
             Column(
                 modifier = Modifier
                     .padding(20.dp)
                     .fillMaxSize(),
-                // Vertikal sudah diatur di sini (Center jika isWide)
                 verticalArrangement = if (isWide) Arrangement.Center else Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -157,7 +207,7 @@ fun AdminActionCard(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.linearGradient(gradientColors)),
+                        .background(androidx.compose.ui.graphics.Brush.linearGradient(gradientColors)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -172,7 +222,6 @@ fun AdminActionCard(
 
                 // TEXT CONTENT
                 Column(
-                    // PERBAIKAN DI SINI: Gunakan Alignment.Start (Horizontal saja)
                     modifier = if (isWide) Modifier
                         .padding(start = 64.dp)
                         .align(Alignment.Start)

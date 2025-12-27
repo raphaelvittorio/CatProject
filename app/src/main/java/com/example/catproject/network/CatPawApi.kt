@@ -39,7 +39,17 @@ data class StoryUser(val id: Int, val username: String, val profile_picture_url:
 data class StoryItem(val id: Int, val image_url: String, val username: String?, val profile_picture_url: String?)
 
 // --- POST MODELS ---
-data class Post(val id: Int, val user_id: Int, val username: String, val profile_picture_url: String?, val image_url: String, val caption: String?, var is_liked: Boolean = false, var like_count: Int = 0)
+data class Post(
+    val id: Int,
+    val user_id: Int,
+    val username: String,
+    val profile_picture_url: String?,
+    val image_url: String,
+    val caption: String?,
+    val like_count: Int,
+    val is_liked: Boolean,
+    val created_at: String // <--- Pastikan baris ini ada!
+)
 data class GridPost(val id: Int, val image_url: String)
 data class Comment(val id: Int, val username: String, val comment: String, val profile_picture_url: String?)
 data class CommentRequest(val user_id: Int, val post_id: Int, val comment: String)
@@ -75,6 +85,40 @@ data class DeleteNotificationRequest(
 // Admin
 data class AdminUpdateRoleRequest(val target_user_id: Int, val new_role: String)
 data class AdminDeleteUserRequest(val target_user_id: Int)
+
+// REPORT & ANALYTICS
+data class DashboardStats(
+    val total_users: String,
+    val total_posts: String,
+    val successful_adoptions: String,
+    val pending_reports: String
+)
+
+data class ReportItem(
+    val id: Int,
+    val type: String,
+    val reason: String,
+    val reporter_name: String,
+    val target_id: Int,
+    val post_image: String?,
+    val post_caption: String?
+)
+
+// --- REQUEST MODELS BARU ---
+
+data class SubmitReportRequest(
+    val reporter_id: Int,
+    val target_id: Int,
+    val type: String, // 'post'
+    val reason: String
+)
+
+data class AdminResolveReportRequest(
+    val report_id: Int,
+    val action: String // 'dismiss' or 'delete_content'
+)
+
+
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
@@ -127,6 +171,21 @@ interface ApiService {
 
     @GET("catpaw_api/admin_get_all_posts.php")
     suspend fun adminGetAllPosts(): List<Post>
+
+    // ANALYTICS
+    @GET("catpaw_api/admin_get_dashboard.php")
+    suspend fun getAdminDashboardStats(): DashboardStats
+
+    // REPORTS (USER SIDE)
+    @POST("catpaw_api/report_content.php")
+    suspend fun submitReport(@Body req: SubmitReportRequest): ResponseModel
+
+    // REPORTS (ADMIN SIDE)
+    @GET("catpaw_api/admin_get_reports.php")
+    suspend fun getAdminReports(): List<ReportItem>
+
+    @POST("catpaw_api/admin_resolve_report.php")
+    suspend fun resolveReport(@Body req: AdminResolveReportRequest): ResponseModel
 }
 
 object RetrofitClient {
