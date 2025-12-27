@@ -8,12 +8,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -27,19 +32,14 @@ import com.example.catproject.network.EventPost
 import com.example.catproject.network.RetrofitClient
 import kotlinx.coroutines.launch
 
-// ICONS
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material.icons.rounded.Schedule
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventScreen(navController: NavController) {
     var eventList by remember { mutableStateOf<List<EventPost>>(emptyList()) }
     val scope = rememberCoroutineScope()
+
+    // Ambil user saat ini untuk cek Role
+    val currentUser = UserSession.currentUser
 
     // Fungsi refresh
     fun loadEvents() {
@@ -58,31 +58,40 @@ fun EventScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("create_event") },
-                containerColor = Color(0xFFFF9800),
-                contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Create Event")
+            // --- LOGIKA ADMIN: HANYA ADMIN YANG BISA TAMBAH EVENT ---
+            if (currentUser?.role == "admin") {
+                FloatingActionButton(
+                    onClick = { navController.navigate("create_event") },
+                    containerColor = Color(0xFFFF9800),
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = "Create Event")
+                }
             }
         }
     ) { p ->
-        LazyColumn(
-            contentPadding = p,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFFAFAFA))
-                .padding(horizontal = 16.dp)
-        ) {
-            item { Spacer(Modifier.height(16.dp)) }
-
-            items(eventList) { event ->
-                EventCard(event, onRefresh = { loadEvents() })
-                Spacer(modifier = Modifier.height(16.dp))
+        if (eventList.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(p), contentAlignment = Alignment.Center) {
+                Text("No upcoming events", color = Color.Gray)
             }
+        } else {
+            LazyColumn(
+                contentPadding = p,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFFAFAFA))
+                    .padding(horizontal = 16.dp)
+            ) {
+                item { Spacer(Modifier.height(16.dp)) }
 
-            item { Spacer(Modifier.height(80.dp)) }
+                items(eventList) { event ->
+                    EventCard(event, onRefresh = { loadEvents() })
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                item { Spacer(Modifier.height(80.dp)) }
+            }
         }
     }
 }
@@ -96,7 +105,7 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Cek apakah user saat ini adalah pembuat event
+    // Cek apakah user saat ini adalah pembuat event (atau Admin, jika ingin ditambah logika admin delete)
     val myId = UserSession.currentUser?.id ?: 0
     val isOwner = (event.user_id == myId)
 

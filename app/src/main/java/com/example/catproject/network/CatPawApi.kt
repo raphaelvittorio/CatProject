@@ -10,11 +10,11 @@ import retrofit2.http.*
 data class User(
     val id: Int,
     val username: String,
+    val email: String,
     val profile_picture_url: String?,
     val bio: String?,
-    val profilePictureUrl: String?
+    val role: String = "user" // Default user, bisa "admin"
 )
-
 data class LoginResponse(val status: String, val message: String?, val user: User?)
 data class BaseResponse(val status: String, val message: String?)
 data class GenericResponse(val status: String, val message: String? = null)
@@ -71,6 +71,10 @@ data class DeleteNotificationRequest(
     val notification_id: Int,
     val user_id: Int
 )
+
+// Admin
+data class AdminUpdateRoleRequest(val target_user_id: Int, val new_role: String)
+data class AdminDeleteUserRequest(val target_user_id: Int)
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
@@ -110,6 +114,19 @@ interface ApiService {
     @Multipart @POST("catpaw_api/upload_story.php") suspend fun uploadStory(@Part("user_id") userId: RequestBody, @Part image: MultipartBody.Part): GenericResponse
     @GET("catpaw_api/get_active_stories.php") suspend fun getActiveStories(): List<StoryUser>
     @GET("catpaw_api/get_user_stories.php") suspend fun getUserStories(@Query("user_id") userId: Int): List<StoryItem>
+
+    // ADMIN ENDPOINTS
+    @GET("catpaw_api/admin_get_users.php")
+    suspend fun adminGetUsers(@Query("admin_id") adminId: Int): List<User>
+
+    @POST("catpaw_api/admin_update_role.php")
+    suspend fun adminUpdateRole(@Body req: AdminUpdateRoleRequest): ResponseModel
+
+    @POST("catpaw_api/admin_delete_user.php")
+    suspend fun adminDeleteUser(@Body req: AdminDeleteUserRequest): ResponseModel
+
+    @GET("catpaw_api/admin_get_all_posts.php")
+    suspend fun adminGetAllPosts(): List<Post>
 }
 
 object RetrofitClient {

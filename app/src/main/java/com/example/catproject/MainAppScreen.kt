@@ -166,6 +166,11 @@ fun MainAppScreen(rootNavController: NavController) {
                 // Memanggil Screen Story yang sudah dibuat terpisah
                 StoryViewScreen(nav, uid)
             }
+
+            // Di dalam MainAppScreen -> NavHost
+            composable("admin_dashboard") { AdminDashboardScreen(nav) }
+            composable("admin_users") { AdminUserListScreen(nav) }
+            composable("admin_posts") { AdminPostListScreen(nav) }
         }
     }
 }

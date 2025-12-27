@@ -195,7 +195,7 @@ fun ProfileScreen(
 
                         Spacer(Modifier.height(16.dp))
 
-                        // C. Action Buttons (Edit / Follow)
+                        // C. Action Buttons (Edit / Follow / Admin)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -203,13 +203,24 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (isMe) {
-                                // Tombol Edit (Outline Style)
+                                // Tombol Edit (Standard)
                                 ActionButtonThemed("Edit Profile", Modifier.weight(1f)) {
                                     navController.navigate("edit_profile")
                                 }
-                                ActionButtonThemed("Share Profile", Modifier.weight(1f)) {
-                                    /* TODO: Share Feature */
+
+                                // --- TOMBOL ADMIN PANEL (HANYA UNTUK ADMIN) ---
+                                if (UserSession.currentUser?.role == "admin") {
+                                    Button(
+                                        onClick = { navController.navigate("admin_dashboard") },
+                                        modifier = Modifier.weight(1f).height(34.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        contentPadding = PaddingValues(0.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                                    ) {
+                                        Text("Admin Panel", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
                                 }
+                                // ----------------------------------------------
                             } else {
                                 // Tombol Follow (Filled Orange Style)
                                 val btnColor = if (isFollowing) Color(0xFFEFEFEF) else Color(0xFFFF9800) // Orange Theme
