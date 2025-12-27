@@ -9,8 +9,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -57,8 +55,8 @@ fun SettingsScreen(
                 .padding(vertical = 16.dp)
         ) {
             // --- GENERAL SETTINGS ---
-            SettingsItem(Icons.Outlined.Person, "Account Information") {}
-            SettingsItem(Icons.Outlined.Lock, "Privacy & Security") {}
+            // Item Account & Privacy dihapus sesuai permintaan
+
             SettingsItem(Icons.Outlined.BookmarkBorder, "Saved Posts") {
                 navController.navigate("saved_posts")
             }
