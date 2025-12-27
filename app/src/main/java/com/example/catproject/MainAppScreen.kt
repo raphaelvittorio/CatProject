@@ -177,7 +177,11 @@ fun MainAppScreen(rootNavController: NavController) {
             composable("settings") { SettingsScreen(nav, rootNavController = nav) }
 
             //saved post
-            composable("saved_posts") { SavedPostsScreen(nav) }        }
+            composable("saved_posts") { SavedPostsScreen(nav) }
+
+            composable("joined_events") { JoinedEventsScreen(nav) }
+
+        }
     }
 }
 

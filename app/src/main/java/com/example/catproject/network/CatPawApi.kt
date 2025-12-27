@@ -131,6 +131,27 @@ data class SaveRequest(
     val user_id: Int,
     val post_id: Int
 )
+
+data class Event(
+    val id: Int,
+    val user_id: Int,
+    val title: String,
+    val description: String,
+    val event_date: String,
+    val time: String,
+    val location: String,
+    val image_url: String,
+    val username: String?, // Bisa null jika join gagal
+    val profile_picture_url: String?,
+    val is_joined: Boolean = false // Field baru
+)
+
+data class EventJoinRequest(
+    val user_id: Int,
+    val event_id: Int
+)
+
+
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
@@ -159,7 +180,8 @@ interface ApiService {
     @GET("catpaw_api/get_chat_detail.php") suspend fun getChatDetail(@Query("my_id") myId: Int, @Query("other_id") otherId: Int): List<ChatMessage>
     @GET("catpaw_api/get_chat_list.php") suspend fun getChatList(@Query("user_id") myId: Int): List<ChatUserItem>
 
-    @GET("catpaw_api/get_events.php") suspend fun getEvents(): List<EventPost>
+    // UPDATE: getEvents sekarang butuh user_id untuk cek status join
+    @GET("catpaw_api/get_events.php") suspend fun getEvents(@Query("user_id") userId: Int): List<Event>
     @Multipart @POST("catpaw_api/create_event.php") suspend fun createEvent(@Part("user_id") userId: RequestBody, @Part("title") title: RequestBody, @Part("description") desc: RequestBody, @Part("event_date") date: RequestBody, @Part("time") time: RequestBody, @Part("location") loc: RequestBody, @Part image: MultipartBody.Part): BaseResponse
     @POST("catpaw_api/delete_event.php") suspend fun deleteEvent(@Body r: DeleteEventRequest): BaseResponse
 
@@ -210,6 +232,14 @@ interface ApiService {
 
     @GET("catpaw_api/get_saved_posts.php")
     suspend fun getSavedPosts(@Query("user_id") userId: Int): List<Post>
+
+    // BARU: Join/Unjoin
+    @POST("catpaw_api/toggle_event_join.php")
+    suspend fun toggleEventJoin(@Body request: EventJoinRequest): CommonResponse
+
+    // BARU: List Joined Events
+    @GET("catpaw_api/get_joined_events.php")
+    suspend fun getJoinedEvents(@Query("user_id") userId: Int): List<Event>
 
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Schedule
@@ -18,7 +19,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -27,24 +27,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.catproject.network.DeleteEventRequest
-import com.example.catproject.network.EventPost
-import com.example.catproject.network.RetrofitClient
+import com.example.catproject.network.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventScreen(navController: NavController) {
-    var eventList by remember { mutableStateOf<List<EventPost>>(emptyList()) }
+    // Gunakan model Event yang sudah ada di ApiService (sesuaikan nama classnya jika berbeda)
+    // Asumsi: di ApiService nama classnya adalah "Event" (seperti di panduan sebelumnya)
+    // Jika di ApiService Anda pakai "EventPost", ubah "Event" jadi "EventPost" di bawah ini.
+    var eventList by remember { mutableStateOf<List<Event>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
 
-    // Ambil user saat ini untuk cek Role
+    // Ambil user saat ini
     val currentUser = UserSession.currentUser
+    val myId = currentUser?.id ?: 0
 
     // Fungsi refresh
     fun loadEvents() {
         scope.launch {
-            try { eventList = RetrofitClient.instance.getEvents() } catch (e: Exception) {}
+            try {
+                // Panggil endpoint getEvents(userId) agar status is_joined terisi
+                eventList = RetrofitClient.instance.getEvents(myId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
         }
     }
 
@@ -58,7 +68,9 @@ fun EventScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            // --- LOGIKA ADMIN: HANYA ADMIN YANG BISA TAMBAH EVENT ---
+            // --- LOGIKA ADMIN / CREATOR ---
+            // Jika ingin semua user bisa buat event, hapus if-nya.
+            // Sesuai kode Anda sebelumnya, hanya admin:
             if (currentUser?.role == "admin") {
                 FloatingActionButton(
                     onClick = { navController.navigate("create_event") },
@@ -71,7 +83,11 @@ fun EventScreen(navController: NavController) {
             }
         }
     ) { p ->
-        if (eventList.isEmpty()) {
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFF9800))
+            }
+        } else if (eventList.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(p), contentAlignment = Alignment.Center) {
                 Text("No upcoming events", color = Color.Gray)
             }
@@ -86,7 +102,7 @@ fun EventScreen(navController: NavController) {
                 item { Spacer(Modifier.height(16.dp)) }
 
                 items(eventList) { event ->
-                    EventCard(event, onRefresh = { loadEvents() })
+                    EventCard(event, myId, onRefresh = { loadEvents() })
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
@@ -97,7 +113,8 @@ fun EventScreen(navController: NavController) {
 }
 
 @Composable
-fun EventCard(event: EventPost, onRefresh: () -> Unit) {
+fun EventCard(event: Event, myId: Int, onRefresh: () -> Unit) {
+    // Format URL
     val imageUrl = if (!event.image_url.isNullOrEmpty())
         "http://10.0.2.2/catpaw_api/uploads/${event.image_url}"
     else "https://via.placeholder.com/400x200"
@@ -105,13 +122,12 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Cek apakah user saat ini adalah pembuat event (atau Admin, jika ingin ditambah logika admin delete)
-    val myId = UserSession.currentUser?.id ?: 0
+    // Status Kepemilikan & Join
     val isOwner = (event.user_id == myId)
-
+    var isJoined by remember { mutableStateOf(event.is_joined) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Dialog Konfirmasi
+    // Dialog Konfirmasi Hapus
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -126,7 +142,7 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
                                 val res = RetrofitClient.instance.deleteEvent(DeleteEventRequest(event.id, myId))
                                 if (res.status == "success") {
                                     Toast.makeText(context, "Event Deleted", Toast.LENGTH_SHORT).show()
-                                    onRefresh() // Refresh List
+                                    onRefresh()
                                 } else {
                                     Toast.makeText(context, "Failed: ${res.message}", Toast.LENGTH_SHORT).show()
                                 }
@@ -151,6 +167,7 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column {
+            // --- GAMBAR EVENT ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,7 +180,7 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
                     contentScale = ContentScale.Crop
                 )
 
-                // TOMBOL DELETE (Hanya muncul jika Owner)
+                // Tombol Delete (Hanya Owner/Admin)
                 if (isOwner) {
                     Box(
                         modifier = Modifier
@@ -183,11 +200,13 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
                 }
             }
 
+            // --- KONTEN EVENT ---
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = event.title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
 
                 Spacer(Modifier.height(12.dp))
 
+                // Baris Tanggal & Waktu
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.CalendarToday, null, modifier = Modifier.size(16.dp), tint = Color(0xFFFF9800))
                     Spacer(Modifier.width(8.dp))
@@ -202,6 +221,7 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
 
+                // Baris Lokasi
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.LocationOn, null, modifier = Modifier.size(16.dp), tint = Color(0xFFFF9800))
                     Spacer(Modifier.width(8.dp))
@@ -210,17 +230,41 @@ fun EventCard(event: EventPost, onRefresh: () -> Unit) {
 
                 Spacer(Modifier.height(12.dp))
 
+                // Deskripsi
                 Text(text = event.description, fontSize = 14.sp, lineHeight = 20.sp, color = Color.DarkGray)
 
                 Spacer(Modifier.height(16.dp))
 
+                // --- TOMBOL JOIN / JOINED ---
                 Button(
-                    onClick = { /* Logic Join */ },
+                    onClick = {
+                        val oldState = isJoined
+                        isJoined = !isJoined // Toggle UI instant
+
+                        scope.launch {
+                            try {
+                                val res = RetrofitClient.instance.toggleEventJoin(EventJoinRequest(myId, event.id))
+                                val msg = if (res.action == "joined") "You joined the event!" else "You left the event."
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                isJoined = oldState // Rollback jika error
+                                Toast.makeText(context, "Connection Error", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isJoined) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                    ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Join Event", fontWeight = FontWeight.Bold)
+                    if (isJoined) {
+                        Icon(Icons.Rounded.Check, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Joined", fontWeight = FontWeight.Bold)
+                    } else {
+                        Text("Join Event", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

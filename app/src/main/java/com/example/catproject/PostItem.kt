@@ -91,9 +91,11 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
                     scope.launch {
                         try {
                             RetrofitClient.instance.submitReport(SubmitReportRequest(myId, post.id, "post", reportReason))
-                            Toast.makeText(context, "Reported", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Report submitted", Toast.LENGTH_SHORT).show()
                             showReportDialog = false
-                        } catch (e: Exception) {}
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Failed to submit report", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }) { Text("Submit") }
             },
@@ -111,8 +113,39 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
             Box {
                 IconButton(onClick = { showMenu = true }) { Icon(Icons.Rounded.MoreVert, null) }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                    if (isOwner || isAdmin) DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { /* Delete Logic */ })
-                    if (!isOwner) DropdownMenuItem(text = { Text("Report") }, onClick = { showReportDialog = true })
+                    // --- DELETE LOGIC IMPLEMENTED HERE ---
+                    if (isOwner || isAdmin) {
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Color.Red) },
+                            leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = Color.Red) },
+                            onClick = {
+                                showMenu = false
+                                scope.launch {
+                                    try {
+                                        val res = RetrofitClient.instance.deletePost(DeletePostRequest(post.id, myId))
+                                        if (res.status == "success") {
+                                            Toast.makeText(context, "Post deleted", Toast.LENGTH_SHORT).show()
+                                            onDelete() // Refresh list UI
+                                        } else {
+                                            Toast.makeText(context, "Failed to delete: ${res.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        )
+                    }
+                    if (!isOwner) {
+                        DropdownMenuItem(
+                            text = { Text("Report") },
+                            leadingIcon = { Icon(Icons.Outlined.Report, null) },
+                            onClick = {
+                                showMenu = false
+                                showReportDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }

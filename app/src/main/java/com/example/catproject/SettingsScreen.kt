@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-
+import androidx.compose.material.icons.filled.EventAvailable // atau ikon lain yg cocok
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -59,6 +59,9 @@ fun SettingsScreen(
 
             SettingsItem(Icons.Outlined.BookmarkBorder, "Saved Posts") {
                 navController.navigate("saved_posts")
+            }
+            SettingsItem(Icons.Default.EventAvailable, "Joined Events") {
+                navController.navigate("joined_events")
             }
 
             // --- ADMIN SECTION ---
