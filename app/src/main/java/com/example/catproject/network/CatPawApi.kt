@@ -42,14 +42,16 @@ data class StoryItem(val id: Int, val image_url: String, val username: String?, 
 data class Post(
     val id: Int,
     val user_id: Int,
-    val username: String,
-    val profile_picture_url: String?,
     val image_url: String,
     val caption: String?,
+    val created_at: String?,
+    val username: String,
+    val profile_picture_url: String?,
     val like_count: Int,
     val is_liked: Boolean,
-    val created_at: String // <--- Pastikan baris ini ada!
+    val is_saved: Boolean = false // <-- Properti Baru (Default false agar aman)
 )
+
 data class GridPost(val id: Int, val image_url: String)
 data class Comment(val id: Int, val username: String, val comment: String, val profile_picture_url: String?)
 data class CommentRequest(val user_id: Int, val post_id: Int, val comment: String)
@@ -118,15 +120,23 @@ data class AdminResolveReportRequest(
     val action: String // 'dismiss' or 'delete_content'
 )
 
+//SAVED
+data class CommonResponse(
+    val status: String,
+    val message: String? = null,
+    val action: String? = null
+)
 
+data class SaveRequest(
+    val user_id: Int,
+    val post_id: Int
+)
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
     @POST("catpaw_api/signup.php") suspend fun signup(@Body r: SignupRequest): BaseResponse
 
-    @GET("catpaw_api/get_posts.php") suspend fun getPosts(@Query("user_id") uid: Int): List<Post>
     @GET("catpaw_api/get_explore.php") suspend fun getExplore(): List<GridPost>
-    @GET("catpaw_api/get_post_detail.php") suspend fun getPostDetail(@Query("post_id") pid: Int, @Query("current_user_id") uid: Int): Post
     @Multipart @POST("catpaw_api/upload_post.php") suspend fun uploadPost(@Part("user_id") uid: RequestBody, @Part("caption") cap: RequestBody, @Part img: MultipartBody.Part): GenericResponse
     @POST("catpaw_api/delete_post.php") suspend fun deletePost(@Body r: DeletePostRequest): BaseResponse
 
@@ -159,6 +169,13 @@ interface ApiService {
     @GET("catpaw_api/get_active_stories.php") suspend fun getActiveStories(): List<StoryUser>
     @GET("catpaw_api/get_user_stories.php") suspend fun getUserStories(@Query("user_id") userId: Int): List<StoryItem>
 
+    // --- POSTS ---
+    @GET("catpaw_api/get_posts.php")
+    suspend fun getPosts(@Query("user_id") userId: Int): List<Post>
+
+    @GET("catpaw_api/get_post_detail.php")
+    suspend fun getPostDetail(@Query("post_id") postId: Int, @Query("current_user_id") userId: Int): Post?
+
     // ADMIN ENDPOINTS
     @GET("catpaw_api/admin_get_users.php")
     suspend fun adminGetUsers(@Query("admin_id") adminId: Int): List<User>
@@ -186,6 +203,14 @@ interface ApiService {
 
     @POST("catpaw_api/admin_resolve_report.php")
     suspend fun resolveReport(@Body req: AdminResolveReportRequest): ResponseModel
+
+    // --- FITUR SAVE ---
+    @POST("catpaw_api/toggle_save.php")
+    suspend fun toggleSave(@Body request: SaveRequest): CommonResponse
+
+    @GET("catpaw_api/get_saved_posts.php")
+    suspend fun getSavedPosts(@Query("user_id") userId: Int): List<Post>
+
 }
 
 object RetrofitClient {

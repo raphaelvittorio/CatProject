@@ -412,11 +412,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                             }
 
                             Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = post!!.created_at, // Format Time Ago di Backend disarankan
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
+
                         }
 
                         HorizontalDivider(

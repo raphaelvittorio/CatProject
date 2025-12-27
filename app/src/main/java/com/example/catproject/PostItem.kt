@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -32,11 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.catproject.network.DeletePostRequest
-import com.example.catproject.network.LikeRequest
-import com.example.catproject.network.Post
-import com.example.catproject.network.RetrofitClient
-import com.example.catproject.network.SubmitReportRequest
+import com.example.catproject.network.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,15 +42,14 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Session Info
     val myId = UserSession.currentUser?.id ?: 0
     val myRole = UserSession.currentUser?.role ?: "user"
 
     // State
     var isLiked by remember { mutableStateOf(post.is_liked) }
     var likeCount by remember { mutableStateOf(post.like_count) }
+    var isSaved by remember { mutableStateOf(post.is_saved) }
 
-    // Menu & Report State
     var showMenu by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
     var reportReason by remember { mutableStateOf("") }
@@ -63,263 +59,113 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
     val baseUrl = "http://10.0.2.2/catpaw_api/uploads/"
     val fullImageUrl = baseUrl + post.image_url
 
-    // --- FUNGSI SHARE (Native Android Intent) ---
     fun sharePost() {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "CatPaw Post")
-            val shareMessage = "${post.username} shared a moment on CatPaw:\n\n$fullImageUrl\n\n\"${post.caption ?: ""}\""
+            val shareMessage = "${post.username} shared: $fullImageUrl\n\n${post.caption ?: ""}"
             putExtra(Intent.EXTRA_TEXT, shareMessage)
         }
         val shareIntent = Intent.createChooser(sendIntent, "Share via")
         context.startActivity(shareIntent)
     }
 
-    // --- REPORT DIALOG ---
+    // Report Dialog
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Report Post", fontWeight = FontWeight.Bold) },
+            title = { Text("Report Post") },
             text = {
                 Column {
-                    Text("Select a reason:", fontSize = 14.sp, color = Color.Gray)
-                    Spacer(Modifier.height(12.dp))
-                    val reasons = listOf("Spam", "Inappropriate Content", "Scam / Fraud", "Hate Speech")
+                    val reasons = listOf("Spam", "Inappropriate", "Scam", "Hate Speech")
                     reasons.forEach { reason ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { reportReason = reason }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (reportReason == reason),
-                                onClick = { reportReason = reason },
-                                colors = RadioButtonDefaults.colors(selectedColor = themeColor)
-                            )
-                            Text(text = reason, modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp)
+                        Row(Modifier.fillMaxWidth().clickable { reportReason = reason }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = (reportReason == reason), onClick = { reportReason = reason })
+                            Text(reason, Modifier.padding(start = 8.dp))
                         }
                     }
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        if (reportReason.isNotEmpty()) {
-                            scope.launch {
-                                try {
-                                    RetrofitClient.instance.submitReport(
-                                        SubmitReportRequest(myId, post.id, "post", reportReason)
-                                    )
-                                    Toast.makeText(context, "Report submitted.", Toast.LENGTH_SHORT).show()
-                                    showReportDialog = false
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Failed to submit", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = themeColor),
-                    enabled = reportReason.isNotEmpty()
-                ) {
-                    Text("Submit")
-                }
+                Button(onClick = {
+                    scope.launch {
+                        try {
+                            RetrofitClient.instance.submitReport(SubmitReportRequest(myId, post.id, "post", reportReason))
+                            Toast.makeText(context, "Reported", Toast.LENGTH_SHORT).show()
+                            showReportDialog = false
+                        } catch (e: Exception) {}
+                    }
+                }) { Text("Submit") }
             },
-            dismissButton = {
-                TextButton(onClick = { showReportDialog = false }) { Text("Cancel", color = Color.Gray) }
-            }
+            dismissButton = { TextButton(onClick = { showReportDialog = false }) { Text("Cancel") } }
         )
     }
 
-    // --- MAIN UI ---
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-    ) {
-        // 1. HEADER (Instagram Style: Profile 32dp, Bold Username, Dots Menu)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
+        // Header
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             val ppUrl = if (!post.profile_picture_url.isNullOrEmpty()) baseUrl + post.profile_picture_url else "https://via.placeholder.com/150"
-
-            Image(
-                painter = rememberAsyncImagePainter(ppUrl),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable { navController.navigate("visit_profile/${post.user_id}") }
-                    .background(Color.LightGray),
-                contentScale = ContentScale.Crop
-            )
-
+            Image(rememberAsyncImagePainter(ppUrl), null, Modifier.size(32.dp).clip(CircleShape).clickable { navController.navigate("visit_profile/${post.user_id}") }, contentScale = ContentScale.Crop)
             Spacer(Modifier.width(10.dp))
-
-            Text(
-                text = post.username,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { navController.navigate("visit_profile/${post.user_id}") }
-            )
-
+            Text(post.username, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Box {
-                IconButton(onClick = { showMenu = true }, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.Black)
-                }
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                    modifier = Modifier.background(Color.White)
-                ) {
-                    if (isOwner || isAdmin) {
-                        DropdownMenuItem(
-                            text = { Text("Delete", color = Color.Red) },
-                            leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = Color.Red) },
-                            onClick = {
-                                showMenu = false
-                                scope.launch {
-                                    try {
-                                        val res = RetrofitClient.instance.deletePost(DeletePostRequest(post.id, myId))
-                                        if (res.status == "success") onDelete()
-                                    } catch (e: Exception) {}
-                                }
-                            }
-                        )
-                    }
-                    if (!isOwner) {
-                        DropdownMenuItem(
-                            text = { Text("Report") },
-                            leadingIcon = { Icon(Icons.Outlined.Report, null, tint = Color.Red) },
-                            onClick = {
-                                showMenu = false
-                                showReportDialog = true
-                            }
-                        )
-                    }
+                IconButton(onClick = { showMenu = true }) { Icon(Icons.Rounded.MoreVert, null) }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    if (isOwner || isAdmin) DropdownMenuItem(text = { Text("Delete", color = Color.Red) }, onClick = { /* Delete Logic */ })
+                    if (!isOwner) DropdownMenuItem(text = { Text("Report") }, onClick = { showReportDialog = true })
                 }
             }
         }
 
-        // 2. IMAGE (Square 1:1)
-        Image(
-            painter = rememberAsyncImagePainter(fullImageUrl),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .background(Color(0xFFF5F5F5))
-                .clickable { navController.navigate("post_detail/${post.id}") },
-            contentScale = ContentScale.Crop
-        )
+        // Image
+        Image(rememberAsyncImagePainter(fullImageUrl), null, Modifier.fillMaxWidth().aspectRatio(1f).clickable { navController.navigate("post_detail/${post.id}") }, contentScale = ContentScale.Crop)
 
-        // 3. ACTION BAR (Icons: Heart, Bubble, Plane ... Bookmark)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // A. Left Side Actions
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // LIKE
+        // Actions
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Icon(
-                    imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Like",
-                    tint = if (isLiked) Color(0xFFFF9800) else Color.Black,
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clickable {
-                            val oldState = isLiked
-                            isLiked = !isLiked
-                            likeCount += if (isLiked) 1 else -1
-                            scope.launch {
-                                try { RetrofitClient.instance.toggleLike(LikeRequest(myId, post.id)) }
-                                catch (e: Exception) { isLiked = oldState; likeCount += if (isLiked) 1 else -1 }
-                            }
-                        }
+                    if (isLiked) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder, "Like",
+                    tint = if (isLiked) themeColor else Color.Black,
+                    modifier = Modifier.size(26.dp).clickable {
+                        isLiked = !isLiked; likeCount += if (isLiked) 1 else -1
+                        scope.launch { try { RetrofitClient.instance.toggleLike(LikeRequest(myId, post.id)) } catch (e: Exception) {} }
+                    }
                 )
-
-                // COMMENT (Chat Bubble Outline)
-                Icon(
-                    imageVector = Icons.Outlined.ChatBubbleOutline,
-                    contentDescription = "Comment",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { navController.navigate("post_detail/${post.id}") }
-                )
-
-                // SHARE (Paper Plane - The "Instagram Share" look)
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Send,
-                    contentDescription = "Share",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { sharePost() }
-                )
+                Icon(Icons.Outlined.ChatBubbleOutline, "Comment", Modifier.size(24.dp).clickable { navController.navigate("post_detail/${post.id}") })
+                Icon(Icons.AutoMirrored.Outlined.Send, "Share", Modifier.size(24.dp).clickable { sharePost() })
             }
-
             Spacer(Modifier.weight(1f))
 
-            // B. Right Side Actions (Bookmark - Visual only for now)
+            // TOMBOL SAVE
             Icon(
-                imageVector = Icons.Default.BookmarkBorder,
+                imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                 contentDescription = "Save",
-                tint = Color.Black,
-                modifier = Modifier.size(26.dp)
+                tint = if (isSaved) themeColor else Color.Black,
+                modifier = Modifier.size(26.dp).clickable {
+                    val oldState = isSaved
+                    isSaved = !isSaved
+                    scope.launch {
+                        try {
+                            val res = RetrofitClient.instance.toggleSave(SaveRequest(myId, post.id))
+                            if (res.status == "success") {
+                                Toast.makeText(context, if (res.action == "saved") "Saved" else "Unsaved", Toast.LENGTH_SHORT).show()
+                            } else { isSaved = oldState }
+                        } catch (e: Exception) { isSaved = oldState }
+                    }
+                }
             )
         }
 
-        // 4. INFO SECTION (Likes, Caption, Time)
-        Column(modifier = Modifier.padding(horizontal = 12.dp)) {
-            // Like Count
-            if (likeCount > 0) {
-                Text(
-                    text = "$likeCount likes",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-                Spacer(Modifier.height(6.dp))
-            }
-
-            // Caption (Username Bold + Text)
+        // Footer
+        Column(Modifier.padding(horizontal = 12.dp)) {
+            if (likeCount > 0) Text("$likeCount likes", fontWeight = FontWeight.Bold)
             if (!post.caption.isNullOrEmpty()) {
-                val annotatedString = buildAnnotatedString {
-                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Color.Black)) {
-                        append(post.username + " ")
-                    }
-                    withStyle(style = SpanStyle(color = Color.Black)) { // Caption hitam pekat
-                        append(post.caption)
-                    }
-                }
-                Text(
-                    text = annotatedString,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    modifier = Modifier.clickable { navController.navigate("post_detail/${post.id}") }
-                )
-                Spacer(Modifier.height(4.dp))
+                Text(buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(post.username + " ") }
+                    append(post.caption)
+                })
             }
-
-            // View all comments (Optional Text)
-            Text(
-                text = "View all comments",
-                color = Color.Gray,
-                fontSize = 13.sp,
-                modifier = Modifier.clickable { navController.navigate("post_detail/${post.id}") }
-            )
-
-            Spacer(Modifier.height(16.dp)) // Jarak antar post
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

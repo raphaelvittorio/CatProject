@@ -59,7 +59,9 @@ fun SettingsScreen(
             // --- GENERAL SETTINGS ---
             SettingsItem(Icons.Outlined.Person, "Account Information") {}
             SettingsItem(Icons.Outlined.Lock, "Privacy & Security") {}
-            SettingsItem(Icons.Outlined.BookmarkBorder, "Saved Posts") {}
+            SettingsItem(Icons.Outlined.BookmarkBorder, "Saved Posts") {
+                navController.navigate("saved_posts")
+            }
 
             // --- ADMIN SECTION ---
             if (isAdmin) {
