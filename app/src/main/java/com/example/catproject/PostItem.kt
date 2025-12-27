@@ -233,7 +233,7 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
                 Icon(
                     imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Like",
-                    tint = if (isLiked) Color(0xFFFF3040) else Color.Black, // Merah Instagram/TikTok
+                    tint = if (isLiked) Color(0xFFFF9800) else Color.Black,
                     modifier = Modifier
                         .size(26.dp)
                         .clickable {
@@ -317,15 +317,6 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
                 color = Color.Gray,
                 fontSize = 13.sp,
                 modifier = Modifier.clickable { navController.navigate("post_detail/${post.id}") }
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            // Time Ago
-            Text(
-                text = post.created_at,
-                fontSize = 11.sp,
-                color = Color.Gray
             )
 
             Spacer(Modifier.height(16.dp)) // Jarak antar post

@@ -353,7 +353,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                             Icon(
                                 imageVector = if (isLiked) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
                                 contentDescription = "Like",
-                                tint = if (isLiked) Color.Red else Color.Black,
+                                tint = if (isLiked) themeColor else Color.Black,
                                 modifier = Modifier
                                     .size(28.dp)
                                     .clickable {
