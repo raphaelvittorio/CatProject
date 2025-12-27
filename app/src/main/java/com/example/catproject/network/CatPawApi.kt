@@ -18,6 +18,10 @@ data class User(
 data class LoginResponse(val status: String, val message: String?, val user: User?)
 data class BaseResponse(val status: String, val message: String?)
 data class GenericResponse(val status: String, val message: String? = null)
+data class ResponseModel(
+    val status: String,
+    val message: String? = null // Nullable karena delete_notification.php tidak mengirim pesan, tapi delete_post.php mengirim pesan
+)
 
 // --- NOTIFICATION MODEL (UPDATED) ---
 data class NotificationItem(
@@ -28,11 +32,8 @@ data class NotificationItem(
     val actor_name: String,
     val actor_pic: String?,
     val post_image: String?,
-    val comment_text: String? = null,
-    // FIELD BARU: Menampung status follow dari PHP
-    val is_following: Boolean? = false
+    val is_following: Boolean
 )
-
 // --- STORY MODELS ---
 data class StoryUser(val id: Int, val username: String, val profile_picture_url: String?)
 data class StoryItem(val id: Int, val image_url: String, val username: String?, val profile_picture_url: String?)
@@ -66,8 +67,10 @@ data class DeleteAdoptionRequest(val adoption_id: Int, val user_id: Int)
 data class AdoptActionRequest(val adoption_id: Int, val adopter_id: Int)
 data class EventPost(val id: Int, val user_id: Int, val title: String, val description: String, val event_date: String, val time: String, val location: String, val image_url: String?)
 data class DeleteEventRequest(val event_id: Int, val user_id: Int)
-data class DeleteNotifRequest(val notification_id: Int, val user_id: Int)
-
+data class DeleteNotificationRequest(
+    val notification_id: Int,
+    val user_id: Int
+)
 // --- API INTERFACE ---
 interface ApiService {
     @POST("catpaw_api/login.php") suspend fun login(@Body r: LoginRequest): LoginResponse
@@ -103,8 +106,7 @@ interface ApiService {
     @POST("catpaw_api/delete_event.php") suspend fun deleteEvent(@Body r: DeleteEventRequest): BaseResponse
 
     @GET("catpaw_api/get_notifications.php") suspend fun getNotifications(@Query("user_id") uid: Int): List<NotificationItem>
-    @POST("catpaw_api/delete_notification.php") suspend fun deleteNotification(@Body request: DeleteNotifRequest): GenericResponse
-
+    @POST("catpaw_api/delete_notification.php") suspend fun deleteNotification(@Body request: DeleteNotificationRequest): ResponseModel
     @Multipart @POST("catpaw_api/upload_story.php") suspend fun uploadStory(@Part("user_id") userId: RequestBody, @Part image: MultipartBody.Part): GenericResponse
     @GET("catpaw_api/get_active_stories.php") suspend fun getActiveStories(): List<StoryUser>
     @GET("catpaw_api/get_user_stories.php") suspend fun getUserStories(@Query("user_id") userId: Int): List<StoryItem>
