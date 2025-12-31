@@ -85,7 +85,7 @@ fun ExploreScreen(navController: NavController) {
                             .clickable { navController.navigate("visit_profile/${user.id}") },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val pp = if(user.profile_picture_url != null) "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
+                        val pp = if(user.profile_picture_url != null) "https://catpaw.my.id/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
                         Image(
                             painter = rememberAsyncImagePainter(pp),
                             contentDescription = null,
@@ -111,7 +111,7 @@ fun ExploreScreen(navController: NavController) {
             ) {
                 items(explorePosts) { post ->
                     Image(
-                        painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post.image_url}"),
+                        painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${post.image_url}"),
                         contentDescription = null,
                         modifier = Modifier
                             .aspectRatio(1f)

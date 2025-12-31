@@ -113,7 +113,7 @@ fun CommentsScreen(
                     // Avatar Pengguna
                     Image(
                         painter = rememberAsyncImagePainter(
-                            "http://10.0.2.2/catpaw_api/uploads/${UserSession.currentUser?.profile_picture_url}"
+                            "https://catpaw.my.id/catpaw_api/uploads/${UserSession.currentUser?.profile_picture_url}"
                         ),
                         contentDescription = null,
                         modifier = Modifier
@@ -174,7 +174,7 @@ fun CommentsScreen(
 fun CommentRow(item: Comment) {
     Row(modifier = Modifier.fillMaxWidth()) {
         val pp = if (!item.profile_picture_url.isNullOrEmpty())
-            "http://10.0.2.2/catpaw_api/uploads/${item.profile_picture_url}"
+            "https://catpaw.my.id/catpaw_api/uploads/${item.profile_picture_url}"
         else "https://via.placeholder.com/150"
 
         Image(

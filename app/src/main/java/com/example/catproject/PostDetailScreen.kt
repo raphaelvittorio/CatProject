@@ -219,7 +219,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val myPic = if (!UserSession.currentUser?.profile_picture_url.isNullOrEmpty())
-                        "http://10.0.2.2/catpaw_api/uploads/${UserSession.currentUser?.profile_picture_url}"
+                        "https://catpaw.my.id/catpaw_api/uploads/${UserSession.currentUser?.profile_picture_url}"
                     else "https://via.placeholder.com/150"
 
                     Image(
@@ -312,7 +312,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             val ppUrl = if (!post!!.profile_picture_url.isNullOrEmpty())
-                                "http://10.0.2.2/catpaw_api/uploads/${post!!.profile_picture_url}"
+                                "https://catpaw.my.id/catpaw_api/uploads/${post!!.profile_picture_url}"
                             else "https://via.placeholder.com/150"
 
                             Image(
@@ -330,7 +330,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
 
                         // Full Width Image
                         Image(
-                            painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post!!.image_url}"),
+                            painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${post!!.image_url}"),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -388,7 +388,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                                     .size(26.dp)
                                     .clickable {
                                         sharePost(
-                                            "http://10.0.2.2/catpaw_api/uploads/${post!!.image_url}",
+                                            "https://catpaw.my.id/catpaw_api/uploads/${post!!.image_url}",
                                             post!!.username,
                                             post!!.caption
                                         )
@@ -444,7 +444,7 @@ fun PostDetailScreen(navController: NavController, postId: Int) {
                             verticalAlignment = Alignment.Top // Avatar sejajar teks baris pertama
                         ) {
                             val cPp = if (!comment.profile_picture_url.isNullOrEmpty())
-                                "http://10.0.2.2/catpaw_api/uploads/${comment.profile_picture_url}"
+                                "https://catpaw.my.id/catpaw_api/uploads/${comment.profile_picture_url}"
                             else "https://via.placeholder.com/150"
 
                             Image(

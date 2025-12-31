@@ -97,7 +97,7 @@ fun AdminPostCard(post: Post, myId: Int, onDeleteSuccess: () -> Unit) {
                 modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val pp = if (!post.profile_picture_url.isNullOrEmpty()) "http://10.0.2.2/catpaw_api/uploads/${post.profile_picture_url}" else "https://via.placeholder.com/150"
+                val pp = if (!post.profile_picture_url.isNullOrEmpty()) "https://catpaw.my.id/catpaw_api/uploads/${post.profile_picture_url}" else "https://via.placeholder.com/150"
                 Image(
                     painter = rememberAsyncImagePainter(pp),
                     contentDescription = null,
@@ -142,7 +142,7 @@ fun AdminPostCard(post: Post, myId: Int, onDeleteSuccess: () -> Unit) {
 
             // 2. IMAGE CONTENT
             Image(
-                painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post.image_url}"),
+                painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${post.image_url}"),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()

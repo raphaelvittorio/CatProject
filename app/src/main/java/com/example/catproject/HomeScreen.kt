@@ -136,7 +136,7 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun StoryCircle(name: String, imageUrl: String?, isMe: Boolean, hasStory: Boolean, onClick: () -> Unit) {
-    val baseUrl = "http://10.0.2.2/catpaw_api/uploads/"
+    val baseUrl = "https://catpaw.my.id/catpaw_api/uploads/"
     val pic = if (!imageUrl.isNullOrEmpty()) baseUrl + imageUrl else "https://via.placeholder.com/150"
 
     val borderBrush = Brush.linearGradient(

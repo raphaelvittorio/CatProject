@@ -83,7 +83,7 @@ fun JoinedEventCard(event: Event) {
     ) {
         Row(modifier = Modifier.padding(12.dp)) {
             Image(
-                painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${event.image_url}"),
+                painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${event.image_url}"),
                 contentDescription = null,
                 modifier = Modifier
                     .size(80.dp)

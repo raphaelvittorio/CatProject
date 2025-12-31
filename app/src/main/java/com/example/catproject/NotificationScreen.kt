@@ -191,7 +191,7 @@ fun SwipableNotificationItem(
 
 @Composable
 fun NotificationItemRow(item: NotificationItem, navController: NavController, myId: Int) {
-    val baseUrl = "http://10.0.2.2/catpaw_api/uploads/"
+    val baseUrl = "https://catpaw.my.id/catpaw_api/uploads/"
     val actorPic = if (!item.actor_pic.isNullOrEmpty()) baseUrl + item.actor_pic else "https://via.placeholder.com/150"
 
     var isFollowing by remember { mutableStateOf(item.is_following == true) }

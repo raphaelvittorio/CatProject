@@ -41,35 +41,51 @@ fun AdminUserListScreen(navController: NavController) {
     val context = LocalContext.current
     val myId = UserSession.currentUser?.id ?: 0
 
-    // Load Users
-    LaunchedEffect(Unit) {
-        try {
-            users = RetrofitClient.instance.adminGetUsers(myId)
-        } catch (e: Exception) {
-            Toast.makeText(context, "Error loading users", Toast.LENGTH_SHORT).show()
-        } finally {
-            isLoading = false
+    // Fungsi Load Data
+    fun loadData() {
+        scope.launch {
+            isLoading = true
+            try {
+                // Mengambil daftar user dari server
+                users = RetrofitClient.instance.adminGetUsers(myId)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Connection Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+            } finally {
+                isLoading = false
+            }
         }
     }
+
+    // Load data saat layar pertama kali dibuka
+    LaunchedEffect(Unit) { loadData() }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Manage Users", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Rounded.ArrowBack, null) } },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color(0xFFF8F9FA)
+        containerColor = Color(0xFFF8F9FA) // Background abu-abu muda
     ) { p ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color(0xFFFF9800)) }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFFF9800))
+            }
+        } else if (users.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(p), contentAlignment = Alignment.Center) {
+                Text("No users found.", color = Color.Gray)
+            }
         } else {
             LazyColumn(contentPadding = p) {
                 items(users) { user ->
                     UserAdminCard(user, myId) {
-                        // Refresh Callback
-                        scope.launch { try { users = RetrofitClient.instance.adminGetUsers(myId) } catch (e: Exception){} }
+                        loadData() // Refresh list setelah aksi (delete/update role)
                     }
                 }
             }
@@ -82,38 +98,81 @@ fun UserAdminCard(user: User, myId: Int, onRefresh: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isAdmin = user.role == "admin"
-    val ppUrl = if (!user.profile_picture_url.isNullOrEmpty()) "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
 
+    // URL Gambar Profil (Gunakan placeholder jika null)
+    val ppUrl = if (!user.profile_picture_url.isNullOrEmpty())
+        "https://catpaw.my.id/catpaw_api/uploads/${user.profile_picture_url}"
+    else "https://via.placeholder.com/150"
+
+    // State untuk Dialog Konfirmasi Delete
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // --- DIALOG KONFIRMASI DELETE ---
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete User?") },
+            text = { Text("Are you sure you want to delete account '${user.username}'? This action cannot be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        scope.launch {
+                            try {
+                                // Panggil API Delete
+                                val res = RetrofitClient.instance.adminDeleteUser(AdminDeleteUserRequest(user.id))
+                                if (res.status == "success") {
+                                    Toast.makeText(context, "User deleted successfully", Toast.LENGTH_SHORT).show()
+                                    onRefresh() // Refresh UI
+                                } else {
+                                    Toast.makeText(context, "Failed: ${res.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // --- ITEM CARD UI ---
     Card(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp),
-        shape = RoundedCornerShape(16.dp)
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. AVATAR
+            // 1. FOTO PROFIL
             Image(
                 painter = rememberAsyncImagePainter(ppUrl),
                 contentDescription = null,
-                modifier = Modifier.size(56.dp).clip(CircleShape).background(Color.LightGray),
+                modifier = Modifier.size(50.dp).clip(CircleShape).background(Color.LightGray),
                 contentScale = ContentScale.Crop
             )
 
             Spacer(Modifier.width(16.dp))
 
-            // 2. INFO
+            // 2. INFO USER
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(user.username, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.width(8.dp))
-                    // ROLE BADGE
+
+                    // Badge Role
                     Surface(
                         color = if (isAdmin) Color(0xFFE3F2FD) else Color(0xFFEEEEEE),
                         contentColor = if (isAdmin) Color(0xFF1976D2) else Color.Gray,
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = user.role.uppercase(),
@@ -126,33 +185,46 @@ fun UserAdminCard(user: User, myId: Int, onRefresh: () -> Unit) {
                 Text(user.email, color = Color.Gray, fontSize = 12.sp)
             }
 
-            // 3. ACTIONS
+            // 3. ACTION BUTTONS
             Row {
-                // Role Button
-                IconButton(onClick = {
-                    scope.launch {
-                        val newRole = if (isAdmin) "user" else "admin"
-                        RetrofitClient.instance.adminUpdateRole(AdminUpdateRoleRequest(user.id, newRole))
-                        onRefresh()
-                        Toast.makeText(context, "Role updated", Toast.LENGTH_SHORT).show()
+                // Logic: Jangan tampilkan tombol aksi untuk diri sendiri
+                if (user.id != myId) {
+                    // Tombol Ganti Role
+                    IconButton(onClick = {
+                        scope.launch {
+                            try {
+                                val newRole = if (isAdmin) "user" else "admin"
+                                val res = RetrofitClient.instance.adminUpdateRole(AdminUpdateRoleRequest(user.id, newRole))
+                                if (res.status == "success") {
+                                    onRefresh()
+                                    Toast.makeText(context, "Role updated to $newRole", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Failed: ${res.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error updating role", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if(isAdmin) Icons.Rounded.Shield else Icons.Rounded.Security,
+                            contentDescription = "Change Role",
+                            tint = if(isAdmin) Color(0xFF1976D2) else Color.Gray
+                        )
                     }
-                }) {
-                    Icon(
-                        imageVector = if(isAdmin) Icons.Rounded.Shield else Icons.Rounded.Security,
-                        contentDescription = "Role",
-                        tint = if(isAdmin) Color(0xFF1976D2) else Color.Gray
-                    )
-                }
 
-                // Delete Button
-                IconButton(onClick = {
-                    scope.launch {
-                        RetrofitClient.instance.adminDeleteUser(AdminDeleteUserRequest(user.id))
-                        onRefresh()
-                        Toast.makeText(context, "User deleted", Toast.LENGTH_SHORT).show()
+                    // Tombol Hapus (Trigger Dialog)
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(Icons.Rounded.DeleteForever, contentDescription = "Delete", tint = Color.Red)
                     }
-                }) {
-                    Icon(Icons.Rounded.DeleteForever, contentDescription = "Delete", tint = Color.Red)
+                } else {
+                    // Penanda akun sendiri
+                    Text(
+                        "(You)",
+                        fontSize = 12.sp,
+                        color = Color.LightGray,
+                        modifier = Modifier.align(Alignment.CenterVertically).padding(end = 8.dp)
+                    )
                 }
             }
         }

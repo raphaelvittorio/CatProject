@@ -134,7 +134,7 @@ fun EditProfileScreen(navController: NavController) {
                     rememberAsyncImagePainter(imageUri)
                 } else {
                     val url = if (user?.profile_picture_url != null)
-                        "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}"
+                        "https://catpaw.my.id/catpaw_api/uploads/${user.profile_picture_url}"
                     else "https://via.placeholder.com/150"
                     rememberAsyncImagePainter(url)
                 }

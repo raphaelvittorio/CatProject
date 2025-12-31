@@ -102,7 +102,7 @@ fun ReportCard(report: ReportItem, onAction: () -> Unit) {
             if (!report.post_image.isNullOrEmpty()) {
                 Row(Modifier.fillMaxWidth().background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp)).padding(8.dp)) {
                     Image(
-                        painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${report.post_image}"),
+                        painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${report.post_image}"),
                         contentDescription = null,
                         modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop

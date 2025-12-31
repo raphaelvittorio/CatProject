@@ -56,7 +56,7 @@ fun PostItem(post: Post, navController: NavController, onDelete: () -> Unit) {
 
     val isOwner = (post.user_id == myId)
     val isAdmin = (myRole == "admin")
-    val baseUrl = "http://10.0.2.2/catpaw_api/uploads/"
+    val baseUrl = "https://catpaw.my.id/catpaw_api/uploads/"
     val fullImageUrl = baseUrl + post.image_url
 
     fun sharePost() {

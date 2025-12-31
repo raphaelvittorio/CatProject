@@ -115,8 +115,7 @@ fun EventScreen(navController: NavController) {
 @Composable
 fun EventCard(event: Event, myId: Int, onRefresh: () -> Unit) {
     // Format URL
-    val imageUrl = if (!event.image_url.isNullOrEmpty())
-        "http://10.0.2.2/catpaw_api/uploads/${event.image_url}"
+    val imageUrl = if (!event.image_url.isNullOrEmpty())"https://catpaw.my.id/catpaw_api/uploads/${event.image_url}"
     else "https://via.placeholder.com/400x200"
 
     val context = LocalContext.current

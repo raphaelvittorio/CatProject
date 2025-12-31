@@ -69,7 +69,7 @@ fun SavedPostsScreen(navController: NavController) {
             ) {
                 items(posts) { post ->
                     Image(
-                        painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post.image_url}"),
+                        painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${post.image_url}"),
                         contentDescription = null,
                         modifier = Modifier
                             .aspectRatio(1f)

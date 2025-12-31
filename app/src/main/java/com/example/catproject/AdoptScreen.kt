@@ -92,7 +92,7 @@ fun ModernAdoptCard(
     navController: NavController,
     onRefresh: () -> Unit
 ) {
-    val baseUrl = "http://10.0.2.2/catpaw_api/uploads/"
+    val baseUrl = "https://catpaw.my.id/catpaw_api/uploads/"
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

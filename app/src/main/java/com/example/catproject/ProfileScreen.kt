@@ -146,7 +146,7 @@ fun ProfileScreen(
                         ) {
                             // Foto Profil
                             val ppUrl = if (!user.profile_picture_url.isNullOrEmpty())
-                                "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}"
+                                "https://catpaw.my.id/catpaw_api/uploads/${user.profile_picture_url}"
                             else "https://via.placeholder.com/150"
 
                             Image(
@@ -252,7 +252,7 @@ fun ProfileScreen(
                     } else {
                         items(posts) { post ->
                             Image(
-                                painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${post.image_url}"),
+                                painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${post.image_url}"),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .aspectRatio(1f)
@@ -269,7 +269,7 @@ fun ProfileScreen(
                         items(adoptions) { cat ->
                             Box(modifier = Modifier.aspectRatio(1f).border(0.5.dp, Color.White)) {
                                 Image(
-                                    painter = rememberAsyncImagePainter("http://10.0.2.2/catpaw_api/uploads/${cat.image_url}"),
+                                    painter = rememberAsyncImagePainter("https://catpaw.my.id/catpaw_api/uploads/${cat.image_url}"),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop

@@ -60,7 +60,7 @@ fun ChatListScreen(navController: NavController) {
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val pp = if(user.profile_picture_url != null) "http://10.0.2.2/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
+                    val pp = if(user.profile_picture_url != null) "https://catpaw.my.id/catpaw_api/uploads/${user.profile_picture_url}" else "https://via.placeholder.com/150"
 
                     Image(
                         painter = rememberAsyncImagePainter(pp),
